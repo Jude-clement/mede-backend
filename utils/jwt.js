@@ -1,10 +1,26 @@
 const jwt = require('jsonwebtoken');
+const { encrypt } = require('./encryption');
 require('dotenv').config();
 
 const generateToken = (userId) => {
-  return jwt.sign({ id: userId }, process.env.JWT_SECRET || 'e0e36cdd047e0c636e52a910eb83e11ff92b7f216a806ba62d6fb4707823ced5', {
-    expiresIn: '30d' // Token expires in 30 days
+  // First create the JWT
+  const token = jwt.sign({ id: userId }, process.env.JWT_SECRET, {
+    expiresIn: '30d'
   });
+  
+  // Then encrypt it with crypto
+  return encrypt(token);
 };
 
-module.exports = { generateToken };
+const verifyToken = (encryptedToken) => {
+  try {
+    // First decrypt the token
+    const token = decrypt(encryptedToken);
+    // Then verify the JWT
+    return jwt.verify(token, process.env.JWT_SECRET);
+  } catch (error) {
+    throw new Error('Invalid token');
+  }
+};
+
+module.exports = { generateToken, verifyToken };

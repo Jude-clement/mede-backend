@@ -263,6 +263,56 @@ static async updateDeviceTokens(userId, newToken) {
   }
 }
 
+// Add these methods to your User class:
+
+static async setVerificationToken(userId, token, expiresAt) {
+  await db.query(
+    'UPDATE medusers SET verification_token = ?, verification_expires = ? WHERE user_id = ?',
+    [token, expiresAt, userId]
+  );
+}
+
+static async verifyUser(token) {
+  const [user] = await db.query(
+    'SELECT user_id FROM medusers WHERE verification_token = ? AND verification_expires > NOW()',
+    [token]
+  );
+  
+  if (!user[0]) return false;
+
+  await db.query(
+    'UPDATE medusers SET emailverified = 1, verification_token = NULL, verification_expires = NULL WHERE user_id = ?',
+    [user[0].user_id]
+  );
+  
+  return true;
+}
+
+
+static async markEmailAsVerified(userId) {
+  await db.query(
+    'UPDATE medusers SET emailverified = 1 WHERE user_id = ?',
+    [userId]
+  );
+}
+
+static async findUserByEmailForVerification(email) {
+  const encryptedEmail = encrypt(email);
+  const [rows] = await db.query(
+    'SELECT user_id, emailverified FROM medusers WHERE email = ?',
+    [encryptedEmail]
+  );
+  return rows[0];
+}
+
+static async updatePassword(userId, newPassword) {
+  const encryptedPassword = encrypt(newPassword);
+  await db.query(
+    'UPDATE medusers SET password = ? WHERE user_id = ?',
+    [encryptedPassword, userId]
+  );
+}
+
 }
 
 module.exports = User;

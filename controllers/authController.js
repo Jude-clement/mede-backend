@@ -8,7 +8,7 @@ exports.login = async (req, res) => {
 
     // Validate input
     if (!email || !password) {
-      return res.status(400).json({
+      return res.status(200).json({
         error: true,
         message: 'Email and password are required',
         userName: '',
@@ -75,6 +75,8 @@ exports.login = async (req, res) => {
       userName: decryptedUser.userName,
       phoneNumber: decryptedUser.phoneNumber,
       profilePicture: user.profilepic || '',
+      dob: user.dob || '',
+      emailVerified: user.emailverified,
       token
     });
 
@@ -94,11 +96,11 @@ exports.login = async (req, res) => {
 // google register
 exports.googleRegister = async (req, res) => {
   try {
-      const { name, phoneNumber, email, photoUrl, googleid } = req.body;
+      const { name, phoneNumber,email, photoUrl, googleid } = req.body;
 
       // Validate required fields
       if (!name || !email || !googleid) {
-          return res.status(400).json({
+          return res.status(200).json({
               error: true,
               message: 'Name, email and Google ID are required'
           });
@@ -120,7 +122,7 @@ exports.googleRegister = async (req, res) => {
 
   } catch (error) {
       console.error('Google registration error:', error);
-      res.status(400).json({
+      res.status(200).json({
           error: true,
           message: error.message || 'Google registration failed'
       });
@@ -134,12 +136,13 @@ exports.googleLogin = async (req, res) => {
 
       // Validate required fields
       if (!googleid) {
-          return res.status(400).json({
+          return res.status(200).json({
               error: true,
               message: "Google ID is required",
               userName: "",
               phoneNumber: "",
               profilePicture: "",
+              dob: "",
               token: ""
           });
       }

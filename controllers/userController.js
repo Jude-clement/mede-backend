@@ -1,5 +1,6 @@
 const User = require('../models/userModel');
 const { encrypt, decrypt } = require('../utils/encryption');
+const { generateVerificationToken, sendVerificationEmail } = require('../utils/emailService');
 
 exports.signup = async (req, res) => {
   try {
@@ -7,7 +8,7 @@ exports.signup = async (req, res) => {
 
     // Validate input
     if (!name || !phoneNumber || !email || !password) {
-      return res.status(400).json({
+      return res.status(200).json({
         error: true,
         message: 'All fields are required'
       });
@@ -16,7 +17,7 @@ exports.signup = async (req, res) => {
     // Check if user already exists
     const existingEmail = await User.findByEmail(email);
     if (existingEmail) {
-      return res.status(400).json({
+      return res.status(200).json({
         error: true,
         message: 'Email already registered'
       });
@@ -24,7 +25,7 @@ exports.signup = async (req, res) => {
 
     const existingPhone = await User.findByPhone(phoneNumber);
     if (existingPhone) {
-      return res.status(400).json({
+      return res.status(200).json({
         error: true,
         message: 'Phone number already registered'
       });
@@ -38,15 +39,24 @@ exports.signup = async (req, res) => {
       password
     });
 
+   // Generate and save verification token
+    // Generate verification link (email itself is the token when encrypted)
+    const verificationToken = encrypt(email); // Reuse encryption utils
+    // const verificationUrl = `${process.env.BASE_URL}/api/verify-email?token=${verificationToken}`;
+    const verificationUrl = `${process.env.BASE_URL}/api/verify-email?token=${encodeURIComponent(verificationToken)}`;
+
+    // Send email (pseudo-code - use your email service)
+    await sendVerificationEmail(email, verificationUrl);
+
     res.status(201).json({
       error: false,
-      message: 'User registered successfully'
+      message: 'User registered. Check your email for verification!'
     });
+
   } catch (error) {
-    console.error('Registration error:', error);
-    res.status(500).json({
-      error: true,
-      message: 'Internal server error'
+    res.status(500).json({ 
+      error: true, 
+      message: error.message || 'Registration failed' 
     });
   }
 };

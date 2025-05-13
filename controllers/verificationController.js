@@ -1,11 +1,13 @@
 const User = require('../models/userModel');
-const { sendVerificationEmail } = require('../utils/emailService');
+const { encrypt, decrypt } = require('../utils/encryption');
+const { sendVerificationEmail, generateVerificationToken } = require('../utils/emailService');
+const db = require('../config/db');
 
 exports.sendVerification = async (req, res) => {
   try {
     const { email } = req.body;
 
-    // Find user by email (remember to encrypt email for lookup)
+    // Encrypt email for lookup (matches how it's stored in DB)
     const encryptedEmail = encrypt(email);
     const user = await User.findByEncryptedEmail(encryptedEmail);
 
@@ -16,24 +18,18 @@ exports.sendVerification = async (req, res) => {
       });
     }
 
-    if (user.emailverified) {
-      return res.status(400).json({
+    if (user.emailverified === 1) {
+      return res.status(200).json({
         error: true,
         message: 'Email already verified'
       });
     }
 
-    // Generate new verification token
-    const { token: verificationToken } = generateVerificationToken();
+    // Generate verification token (using email as base)
+    const verificationToken = encrypt(email); // Using email as the token
     
-    // Update user with new token
-    await db.query(
-      'UPDATE medusers SET verification_token = ?, verification_expires = ? WHERE user_id = ?',
-      [verificationToken, new Date(Date.now() + 24 * 60 * 60 * 1000), user.user_id]
-    );
-
     // Send verification email
-    const emailSent = await sendVerificationEmail(decrypt(user.email), verificationToken);
+    const emailSent = await sendVerificationEmail(email, verificationToken);
 
     if (!emailSent) {
       throw new Error('Failed to send verification email');
@@ -56,17 +52,32 @@ exports.verifyEmail = async (req, res) => {
   try {
     const { token } = req.query;
 
-    const user = await User.findByVerificationToken(token);
-
+    // Decrypt token to get original email
+    const email = decrypt(token);
+    const encryptedEmail = encrypt(email);
+    
+    // Find user by email
+    const user = await User.findByEncryptedEmail(encryptedEmail);
+    
     if (!user) {
-      return res.status(400).json({
+      return res.status(200).json({
         error: true,
-        message: 'Invalid or expired verification token'
+        message: 'Invalid verification link'
       });
     }
 
-    // Mark email as verified
-    await User.verifyEmail(user.user_id);
+    if (user.emailverified === 1) {
+      return res.status(200).json({
+        error: true,
+        message: 'Email already verified'
+      });
+    }
+
+    // Update emailverified status
+    await db.query(
+      'UPDATE medusers SET emailverified = 1 WHERE user_id = ?',
+      [user.user_id]
+    );
 
     res.json({
       error: false,
@@ -77,6 +88,58 @@ exports.verifyEmail = async (req, res) => {
     res.status(500).json({
       error: true,
       message: error.message || 'Email verification failed'
+    });
+  }
+};
+
+exports.resendVerificationEmail = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    // Validate input
+    if (!email) {
+      return res.status(200).json({ 
+        error: true,
+        message: 'Email is required'
+      });
+    }
+
+    // Find user by email
+    const encryptedEmail = encrypt(email);
+    const user = await User.findByEncryptedEmail(encryptedEmail);
+
+    if (!user) {
+      return res.status(404).json({
+        error: true,
+        message: 'User not found with this email'
+      });
+    }
+
+    // Check if already verified
+    if (user.emailverified === 1) {
+      return res.status(200).json({
+        error: true,
+        message: 'Email is already verified'
+      });
+    }
+
+    // Generate new verification token
+    const verificationToken = encrypt(email);
+    const emailSent = await sendVerificationEmail(email, verificationToken);
+
+    if (!emailSent) {
+      throw new Error('Failed to send verification email');
+    }
+
+    res.status(200).json({
+      error: false,
+      message: 'Verification email resent successfully'
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      error: true,
+      message: error.message || 'Failed to resend verification email'
     });
   }
 };
