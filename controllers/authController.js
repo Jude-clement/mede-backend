@@ -1,6 +1,7 @@
 const User = require('../models/userModel');
 const { encrypt, decrypt } = require('../utils/encryption');
 const { generateToken } = require('../utils/jwt');
+const DEFAULT_PROFILE_PIC = 'https://img.freepik.com/premium-vector/user-profile-icon-flat-style-member-avatar-vector-illustration-isolated-background-human-permission-sign-business-concept_157943-15752.jpg?semt=ais_hybrid&w=740';
 
 exports.login = async (req, res) => {
   try {
@@ -8,14 +9,16 @@ exports.login = async (req, res) => {
 
     // Validate input
     if (!email || !password) {
-      return res.status(200).json({
-        error: true,
-        message: 'Email and password are required',
-        userName: '',
-        phoneNumber: '',
-        profilePicture: '',
-        token: ''
-      });
+return res.status(200).json({
+  error: true,
+  message: 'Email and password are required',
+  userName: '',
+  phoneNumber: '',
+  profilePicture: '',
+  dob: '',
+  emailVerified: 0,
+  token: ''
+});
     }
 
     // Encrypt the email to match db format
@@ -24,14 +27,16 @@ exports.login = async (req, res) => {
 
     // Check if user exists
     if (!user) {
-      return res.status(401).json({
-        error: true,
-        message: 'Invalid credentials',
-        userName: '',
-        phoneNumber: '',
-        profilePicture: '',
-        token: ''
-      });
+return res.status(200).json({
+  error: true,
+  message: 'Invalid credentials',
+  userName: '',
+  phoneNumber: '',
+  profilePicture: '',
+  dob: '',
+  emailVerified: 0,
+  token: ''
+});
     }
 
     // Decrypt ALL stored user data for validation
@@ -44,16 +49,33 @@ exports.login = async (req, res) => {
 
     // Validate credentials against decrypted data
     if (email !== decryptedUser.email || password !== decryptedUser.password) {
-      return res.status(401).json({
+return res.status(200).json({
+  error: true,
+  message: 'Invalid credentials',
+  userName: '',
+  phoneNumber: '',
+  profilePicture: '',
+  dob: '',
+  emailVerified: 0,
+  token: ''
+});
+    }
+
+        // Check if email is verified
+    if (user.emailverified !== 1) {
+      return res.status(200).json({
         error: true,
-        message: 'Invalid credentials',
+        message: 'Email not verified. Please verify your email to continue.',
+        emailVerified: 0,
+        // userEmail: email,
         userName: '',
         phoneNumber: '',
         profilePicture: '',
+        dob: '',
         token: ''
       });
     }
-
+    
     // Handle device token
     if (devicetoken) {
       const currentTokens = user.devicetoken ? user.devicetoken.split(',') : [];
@@ -74,7 +96,7 @@ exports.login = async (req, res) => {
       message: 'Login successful',
       userName: decryptedUser.userName,
       phoneNumber: decryptedUser.phoneNumber,
-      profilePicture: user.profilepic || '',
+      profilePicture: user.profilepic || DEFAULT_PROFILE_PIC,
       dob: user.dob || '',
       emailVerified: user.emailverified,
       token
@@ -82,12 +104,14 @@ exports.login = async (req, res) => {
 
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({
+    res.status(200).json({
       error: true,
       message: 'Internal server error',
       userName: '',
       phoneNumber: '',
       profilePicture: '',
+      dob: '',
+      emailVerified: 0,
       token: ''
     });
   }
@@ -96,20 +120,24 @@ exports.login = async (req, res) => {
 // google register
 exports.googleRegister = async (req, res) => {
   try {
-      const { name, phoneNumber,email, photoUrl, googleid } = req.body;
+      const { name, email, photoUrl, googleid } = req.body;
 
       // Validate required fields
       if (!name || !email || !googleid) {
           return res.status(200).json({
               error: true,
-              message: 'Name, email and Google ID are required'
+              message: 'Name, email and Google ID are required',
+              userName: '',
+              phoneNumber: '',
+              profilePicture: '',
+              dob: '',
+              emailVerified: 0,
           });
       }
 
       // Create user with Google
       const userId = await User.createWithGoogle({
           name,
-          phoneNumber: phoneNumber || '',
           email,
           photoUrl: photoUrl || '',
           googleid
@@ -140,7 +168,6 @@ exports.googleLogin = async (req, res) => {
               error: true,
               message: "Google ID is required",
               userName: "",
-              phoneNumber: "",
               profilePicture: "",
               dob: "",
               token: ""
@@ -150,12 +177,12 @@ exports.googleLogin = async (req, res) => {
       // Find user by Google ID
       const user = await User.findByGoogleId(googleid);
       if (!user) {
-          return res.status(404).json({
+          return res.status(200).json({
               error: true,
               message: "Google account not registered",
               userName: "",
-              phoneNumber: "",
               profilePicture: "",
+              dob: "",
               token: ""
           });
       }
@@ -171,8 +198,9 @@ exports.googleLogin = async (req, res) => {
       // Decrypt user data for response
       const decryptedUser = {
           userName: decrypt(user.userfullname),
-          phoneNumber: user.mobileno ? decrypt(user.mobileno) : "",
-          profilePicture: user.profilepic || ""
+          // phoneNumber: user.mobileno ? decrypt(user.mobileno) : "",
+          profilePicture: user.profilepic || DEFAULT_PROFILE_PIC,
+          dob: user.dob || ""
       };
 
       res.json({
@@ -189,7 +217,8 @@ exports.googleLogin = async (req, res) => {
           message: error.message || "Google login failed",
           userName: "",
           phoneNumber: "",
-          profilePicture: "",
+          profilePicture: "" || DEFAULT_PROFILE_PIC,
+          dob: "",
           token: ""
       });
   }

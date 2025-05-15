@@ -16,8 +16,10 @@ router.post('/googlelogin', authController.googleLogin);
 
 
 router.post('/signup', userController.signup);
-router.get('/verify-email', verificationController.verifyEmail);  // ?token=xyz
-router.post('/sendverificationemail', verificationController.resendVerificationEmail);
+router.get('/verify-email', verificationController.verifyEmail);  // to verify email
+router.post('/sendverificationemail', verificationController.sendVerification); //to send verification email
+// router.post('/resendverificationemail', verificationController.resendVerificationEmail); //to send verification email
+
 
 router.post('/reset-password', passwordController.requestReset); // Initiate reset
 router.post('/reset-password/confirm', passwordController.resetPassword); // Finalize reset
@@ -26,7 +28,7 @@ router.post('/reset-password/confirm', passwordController.resetPassword); // Fin
 router.get('/reset-password/confirm', (req, res) => {
   const { token } = req.query;
   if (!token) {
-    return res.status(400).send('Invalid reset link');
+    return res.status(200).send('Invalid reset link');
   }
   
   res.send(`

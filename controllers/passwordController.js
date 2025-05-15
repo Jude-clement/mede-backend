@@ -11,7 +11,7 @@ exports.requestReset = async (req, res) => {
     const user = await User.findByEncryptedEmail(encryptedEmail);
     
     if (!user) {
-      return res.status(404).json({
+      return res.status(200).json({
         error: true,
         message: 'User not found'
       });

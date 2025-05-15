@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const { encrypt } = require('../utils/encryption');
+const DEFAULT_PROFILE_PIC = 'https://img.freepik.com/premium-vector/user-profile-icon-flat-style-member-avatar-vector-illustration-isolated-background-human-permission-sign-business-concept_157943-15752.jpg?semt=ais_hybrid&w=740';
 
 class User {
   static async create(userData) {
@@ -134,7 +135,7 @@ static async createWithGoogle(userData) {
     emailalerts: 1,
     pushalerts: 1,
     onlinestatus: 1,
-    profilepic: userData.profilePicture || '', // Can add profile picture URL from Google
+    profilepic: userData.profilePicture || DEFAULT_PROFILE_PIC, // Can add profile picture URL from Google
     devicetoken: '',
     patientlocation: '',
     accountotp: '',
@@ -316,3 +317,23 @@ static async updatePassword(userId, newPassword) {
 }
 
 module.exports = User;
+
+
+
+// for cleaner duplicate checking:
+// static async findOrCreateByGoogle(googleUserData) {
+//   try {
+//     // Try to find existing user
+//     let user = await this.findByGoogleId(googleUserData.googleid);
+    
+//     if (!user) {
+//       // Create if not exists
+//       const userId = await this.createWithGoogle(googleUserData);
+//       user = await this.findByGoogleId(googleUserData.googleid);
+//     }
+    
+//     return user;
+//   } catch (error) {
+//     throw error;
+//   }
+// }
