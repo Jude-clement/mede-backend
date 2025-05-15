@@ -5,14 +5,14 @@ const DEFAULT_PROFILE_PIC = 'https://img.freepik.com/premium-vector/user-profile
 class User {
   static async create(userData) {
     // First check for existing users
-    const existingUser = await this.checkExistingUsers(userData.email, userData.phoneNumber);
+    const existingUser = await this.checkExistingUsers(userData.email, userData.phonenumber);
     if (existingUser.exists) {
       throw new Error(existingUser.message);
     }
 
     // Encrypt all sensitive data
     const encryptedData = {
-      mobileno: encrypt(userData.phoneNumber),
+      mobileno: encrypt(userData.phonenumber),
       email: encrypt(userData.email),
       password: encrypt(userData.password),
       userfullname: encrypt(userData.name),
@@ -40,11 +40,11 @@ class User {
   }
 
   // Check for existing email or phone number
-  static async checkExistingUsers(email, phoneNumber) {
+  static async checkExistingUsers(email, phonenumber) {
     try {
       // Encrypt the values to match what's stored in DB
       const encryptedEmail = encrypt(email);
-      const encryptedPhone = encrypt(phoneNumber);
+      const encryptedPhone = encrypt(phonenumber);
 
       const [emailRows] = await db.query(
         'SELECT user_id FROM medusers WHERE email = ?',
@@ -81,8 +81,8 @@ class User {
     return rows[0];
   }
 
-  static async findByPhone(phoneNumber) {
-    const encryptedPhone = encrypt(phoneNumber);
+  static async findByPhone(phonenumber) {
+    const encryptedPhone = encrypt(phonenumber);
     const [rows] = await db.query(
       'SELECT * FROM medusers WHERE mobileno = ?',
       [encryptedPhone]
@@ -103,11 +103,11 @@ class User {
     }
   }
   
-  static async updateDeviceToken(userId, deviceToken) {
+  static async updateDeviceToken(userId, devicetoken) {
     try {
       await db.query(
         'UPDATE medusers SET devicetoken = ? WHERE user_id = ?',
-        [deviceToken, userId]
+        [devicetoken, userId]
       );
     } catch (error) {
       console.error("Device token update error:", error);
@@ -115,28 +115,32 @@ class User {
     }
   }
 
+//first createwith google
+
 // static async createWithGoogle(userData) {
 //   // First check for existing users
-//   const existingUser = await this.checkExistingUsers(userData.email, userData.phoneNumber);
+//   const existingUser = await this.checkExistingUsers(userData.email, userData.phonenumber);
 //   if (existingUser.exists) {
 //     throw new Error(existingUser.message);
 //   }
 
 //   // Encrypt all sensitive data
 //   const encryptedData = {
-//     mobileno: encrypt(userData.phoneNumber || ''), // Phone optional for Google signup
+//     mobileno: encrypt(userData.phonenumber || ''), // Phone optional for Google signup
 //     email: encrypt(userData.email),
-//     password: encrypt(userData.password || crypto.randomBytes(16).toString('hex')), // Generate random password if not provided
+//     // password: encrypt(userData.password || crypto.randomBytes(16).toString('hex')), // Generate random password if not provided
 //     userfullname: encrypt(userData.name),
 //     googleid: userData.googleid,
+//     profilepic: userData.photourl || '',
 //     // Google-specific defaults
 //     emailverified: 1, // Mark as verified
 //     userstatus: 1,
 //     emailalerts: 1,
 //     pushalerts: 1,
 //     onlinestatus: 1,
-//     profilepic: userData.profilePicture || DEFAULT_PROFILE_PIC, // Can add profile picture URL from Google
-//       devicetoken: userData.deviceToken || '', // Add device token here
+//     password: '', // No password for Google users
+//     profilepic: userData.profilepicture || '', // Can add profile picture URL from Google
+//     devicetoken: userData.devicetoken || '', // Add device token here
 //     patientlocation: '',
 //     accountotp: '',
 //     dob: userData.dob || '1970-01-01',
@@ -151,6 +155,7 @@ class User {
 //   return result.insertId;
 // }
 
+
 ///google signup
 
 static async createWithGoogle(userData) {
@@ -162,11 +167,11 @@ static async createWithGoogle(userData) {
 
   // Encrypt sensitive data
   const encryptedData = {
-      mobileno: userData.phoneNumber ? encrypt(userData.phoneNumber) : '',
+      mobileno: userData.phonenumber ? encrypt(userData.phonenumber) : '',
       email: encrypt(userData.email),
       userfullname: encrypt(userData.name),
       googleid: userData.googleid,
-      profilepic: userData.photoUrl || '',
+      profilepic: userData.photourl || '',
       // Mark as verified since it's from Google
       emailverified: 1,
       // Default values
@@ -175,7 +180,7 @@ static async createWithGoogle(userData) {
       pushalerts: 1,
       onlinestatus: 1,
       password: '', // No password for Google users
-      devicetoken: userData.deviceToken || '', // Add device token here
+      devicetoken: userData.devicetoken || '', // Add device token here
       patientlocation: '',
       accountotp: '',
       dob: '',
@@ -222,6 +227,19 @@ static async checkExistingGoogleUsers(email, googleId) {
 }
 
 //google signin
+
+static async findByEncryptedEmailWithGoogle(encryptedEmail) {
+  try {
+    const [rows] = await db.query(
+      'SELECT * FROM medusers WHERE email = ? AND googleid != ""',
+      [encryptedEmail]
+    );
+    return rows[0];
+  } catch (error) {
+    console.error("Database error:", error);
+    throw error;
+  }
+}
 
 static async findByGoogleId(googleId) {
   try {
@@ -315,6 +333,7 @@ static async updatePassword(userId, newPassword) {
 }
 
 }
+
 
 module.exports = User;
 

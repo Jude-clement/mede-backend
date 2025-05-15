@@ -12,11 +12,11 @@ exports.login = async (req, res) => {
 return res.status(200).json({
   error: true,
   message: 'Email and password are required',
-  userName: '',
-  phoneNumber: '',
-  profilePicture: '',
+  username: '',
+  phonenumber: '',
+  profilepicture: '',
   dob: '',
-  emailVerified: 0,
+  emailverified: 0,
   token: ''
 });
     }
@@ -30,11 +30,11 @@ return res.status(200).json({
 return res.status(200).json({
   error: true,
   message: 'Invalid credentials',
-  userName: '',
-  phoneNumber: '',
-  profilePicture: '',
+  username: '',
+  phonenumber: '',
+  profilepicture: '',
   dob: '',
-  emailVerified: 0,
+  emailverified: 0,
   token: ''
 });
     }
@@ -43,8 +43,8 @@ return res.status(200).json({
     const decryptedUser = {
       email: decrypt(user.email),
       password: decrypt(user.password),
-      userName: decrypt(user.userfullname),
-      phoneNumber: decrypt(user.mobileno)
+      username: decrypt(user.userfullname),
+      phonenumber: decrypt(user.mobileno)
     };
 
     // Validate credentials against decrypted data
@@ -52,11 +52,11 @@ return res.status(200).json({
 return res.status(200).json({
   error: true,
   message: 'Invalid credentials',
-  userName: '',
-  phoneNumber: '',
-  profilePicture: '',
+  username: '',
+  phonenumber: '',
+  profilepicture: '',
   dob: '',
-  emailVerified: 0,
+  emailverified: 0,
   token: ''
 });
     }
@@ -64,13 +64,13 @@ return res.status(200).json({
         // Check if email is verified
     if (user.emailverified !== 1) {
       return res.status(200).json({
-        error: true,
-        message: 'Email not verified. Please verify your email to continue.',
-        emailVerified: 0,
+        error: false,
+        message: 'Please verify your email address to continue. We have sent a verification link to your inbox. Check your email and tap the link to activate your account.',
+        emailverified: 0,
         // userEmail: email,
-        userName: '',
-        phoneNumber: '',
-        profilePicture: '',
+        username: '',
+        phonenumber: '',
+        profilepicture: '',
         dob: '',
         token: ''
       });
@@ -94,11 +94,11 @@ return res.status(200).json({
     res.json({
       error: false,
       message: 'Login successful',
-      userName: decryptedUser.userName,
-      phoneNumber: decryptedUser.phoneNumber,
-      profilePicture: user.profilepic || '',
+      username: decryptedUser.username,
+      phonenumber: decryptedUser.phonenumber,
+      profilepicture: user.profilepic || '',
       dob: user.dob || '',
-      emailVerified: user.emailverified,
+      emailverified: user.emailverified,
       token
     });
 
@@ -107,11 +107,11 @@ return res.status(200).json({
     res.status(200).json({
       error: true,
       message: 'Internal server error',
-      userName: '',
-      phoneNumber: '',
-      profilePicture: '',
+      username: '',
+      phonenumber: '',
+      profilepicture: '',
       dob: '',
-      emailVerified: 0,
+      emailverified: 0,
       token: ''
     });
   }
@@ -120,19 +120,19 @@ return res.status(200).json({
 // google register
 exports.googleRegister = async (req, res) => {
   try {
-      const { name, email, photoUrl, googleid, deviceToken } = req.body;
+      const { name, email, photourl, googleid, devicetoken } = req.body;
 
       // Validate required fields
-      if (!name || !email || !googleid || !deviceToken) {
+      if (!name || !email || !googleid || !devicetoken) {
           return res.status(200).json({
               error: true,
               message: 'Name, email and Google ID are required',
-              userName: '',
-              phoneNumber: '',
-              profilePicture: '',
+              username: '',
+              phonenumber: '',
+              profilepicture: '',
               dob: '',
-              emailVerified: 0,
-              deviceToken : '',
+              emailverified: 0,
+              devicetoken : '',
           });
       }
 
@@ -140,20 +140,20 @@ exports.googleRegister = async (req, res) => {
       const userId = await User.createWithGoogle({
           name,
           email,
-          photoUrl: photoUrl || '',
+          photourl: photourl || '',
           googleid,
-          deviceToken : deviceToken || '',
+          devicetoken : devicetoken || '',
       });
 
       res.status(201).json({
           error: false,
           message: 'Google registration successful',
-          userName: name,
-          phoneNumber: '',
-          profilePicture: photoUrl || '',
+          username: name,
+          phonenumber: '',
+          profilepicture: photourl || '',
           dob: '',
-          emailVerified: 1,
-          deviceToken : deviceToken,
+          emailverified: 1,
+          devicetoken : devicetoken,
       });
 
   } catch (error) {
@@ -161,12 +161,12 @@ exports.googleRegister = async (req, res) => {
       res.status(200).json({
           error: true,
           message: error.message || 'Google registration failed',
-          userName: '',
-          phoneNumber: '',
-          profilePicture: '',
+          username: '',
+          phonenumber: '',
+          profilepicture: '',
           dob: '',
-          emailVerified: 0,
-          deviceToken : '',
+          emailverified: 0,
+          devicetoken : '',
       });
   }
 };
@@ -174,63 +174,77 @@ exports.googleRegister = async (req, res) => {
 ////google login  
 exports.googleLogin = async (req, res) => {
   try {
-    const { googleid, deviceToken = "", name, email, photoUrl } = req.body;
+    const { googleid, devicetoken = "", name, email, photourl } = req.body;
 
     // Validate required fields
     if (!googleid) {
       return res.status(200).json({
         error: true,
         message: "Google ID is required",
-        userName: "",
-        profilePicture: "",
+        username: "",
+        profilepicture: "",
+        phonenumber: "",
         dob: "",
         token: ""
       });
     }
 
-    // Try to find existing user
+    // First try to find by googleid
     let user = await User.findByGoogleId(googleid);
 
-    // If user doesn't exist, register them automatically
+    // If not found by googleid, check if email exists with any googleid
+    if (!user && email) {
+      const encryptedEmail = encrypt(email);
+      user = await User.findByEncryptedEmailWithGoogle(encryptedEmail);
+      
+      if (user) {
+        return res.status(200).json({
+          error: true,
+          message: "Email already registered with another Google account",
+          username: "",
+          profilepicture: "",
+          phonenumber: "",
+          dob: "",
+          token: ""
+        });
+      }
+    }
+
+    // If user still doesn't exist, register them
     if (!user) {
-      // Validate required registration fields
       if (!name || !email) {
         return res.status(200).json({
           error: true,
           message: "Name and email are required for first-time registration",
-          userName: "",
-          profilePicture: "",
+          username: "",
+          profilepicture: "",
           dob: "",
           token: ""
         });
       }
 
-      // Create new user with Google
       const userId = await User.createWithGoogle({
         name,
         email,
         googleid,
-        photoUrl
+        photourl,
+        devicetoken
       });
 
-      // Get the newly created user
       user = await User.findByGoogleId(googleid);
       if (!user) throw new Error("Failed to create new Google user");
     }
 
-    // Update device tokens if provided
-    if (deviceToken) {
-      await User.updateDeviceTokens(user.user_id, deviceToken);
+    // Rest of your existing code...
+    if (devicetoken) {
+      await User.updateDeviceTokens(user.user_id, devicetoken);
     }
 
-    // Generate JWT token
     const token = generateToken(user.user_id);
-
-    // Decrypt user data for response
     const decryptedUser = {
-      userName: decrypt(user.userfullname),
-      phoneNumber: user.mobileno ? decrypt(user.mobileno) : "",
-      profilePicture: user.profilepic || DEFAULT_PROFILE_PIC,
+      username: decrypt(user.userfullname),
+      phonenumber: user.mobileno ? decrypt(user.mobileno) : "",
+      profilepicture: user.profilepic || DEFAULT_PROFILE_PIC,
       dob: user.dob || ""
     };
 
@@ -246,8 +260,8 @@ exports.googleLogin = async (req, res) => {
     res.status(500).json({
       error: true,
       message: error.message || "Google authentication failed",
-      userName: "",
-      profilePicture: "" || DEFAULT_PROFILE_PIC,
+      username: "",
+      profilepicture: "" || DEFAULT_PROFILE_PIC,
       token: ""
     });
   }

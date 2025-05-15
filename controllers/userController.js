@@ -4,18 +4,18 @@ const { generateVerificationToken, sendVerificationEmail } = require('../utils/e
 
 exports.signup = async (req, res) => {
   try {
-    const { name, phoneNumber, email, password } = req.body;
+    const { name, phonenumber, email, password } = req.body;
 
     // Validate input
-    if (!name || !phoneNumber || !email || !password) {
+    if (!name || !phonenumber || !email || !password) {
       return res.status(200).json({
         error: true,
         message: 'All fields are required',
-        userName: '',
-        phoneNumber: '',
-        profilePicture: '',
+        username: '',
+        phonenumber: '',
+        profilepicture: '',
         dob: '',
-        emailVerified: 0
+        emailverified: 0
       });
     }
 
@@ -25,31 +25,31 @@ exports.signup = async (req, res) => {
       return res.status(200).json({
         error: true,
         message: 'Email already registered',
-        userName: '',
-        phoneNumber: '',
-        profilePicture: '',
+        username: '',
+        phonenumber: '',
+        profilepicture: '',
         dob: '',
-        emailVerified: 0
+        emailverified: 0
       });
     }
 
-    const existingPhone = await User.findByPhone(phoneNumber);
+    const existingPhone = await User.findByPhone(phonenumber);
     if (existingPhone) {
       return res.status(200).json({
         error: true,
         message: 'Phone number already registered',
-        userName: '',
-        phoneNumber: '',
-        profilePicture: '',
+        username: '',
+        phonenumber: '',
+        profilepicture: '',
         dob: '',
-        emailVerified: 1
+        emailverified: 1
       });
     }
 
     // Create new user
     const userId = await User.create({
       name,
-      phoneNumber,
+      phonenumber,
       email,
       password
     });
@@ -66,22 +66,22 @@ exports.signup = async (req, res) => {
     res.status(201).json({
       error: false,
       message: 'User registered. Check your email for verification!',
-      userName: name,
-      phoneNumber,
-      profilePicture: '',
+      username: name,
+      phonenumber,
+      profilepicture: '',
       dob: '',
-      emailVerified: 0
+      emailverified: 0
     });
 
   } catch (error) {
     res.status(500).json({ 
       error: true, 
       message: error.message || 'Registration failed',
-      userName: '',
-      phoneNumber: '',
-      profilePicture: '',
+      username: '',
+      phonenumber: '',
+      profilepicture: '',
       dob: '',
-      emailVerified: 0
+      emailverified: 0
     });
   }
 };
