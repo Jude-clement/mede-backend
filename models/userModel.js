@@ -115,41 +115,41 @@ class User {
     }
   }
 
-static async createWithGoogle(userData) {
-  // First check for existing users
-  const existingUser = await this.checkExistingUsers(userData.email, userData.phoneNumber);
-  if (existingUser.exists) {
-    throw new Error(existingUser.message);
-  }
+// static async createWithGoogle(userData) {
+//   // First check for existing users
+//   const existingUser = await this.checkExistingUsers(userData.email, userData.phoneNumber);
+//   if (existingUser.exists) {
+//     throw new Error(existingUser.message);
+//   }
 
-  // Encrypt all sensitive data
-  const encryptedData = {
-    mobileno: encrypt(userData.phoneNumber || ''), // Phone optional for Google signup
-    email: encrypt(userData.email),
-    password: encrypt(userData.password || crypto.randomBytes(16).toString('hex')), // Generate random password if not provided
-    userfullname: encrypt(userData.name),
-    googleid: userData.googleid,
-    // Google-specific defaults
-    emailverified: 1, // Mark as verified
-    userstatus: 1,
-    emailalerts: 1,
-    pushalerts: 1,
-    onlinestatus: 1,
-    profilepic: userData.profilePicture || DEFAULT_PROFILE_PIC, // Can add profile picture URL from Google
-    devicetoken: '',
-    patientlocation: '',
-    accountotp: '',
-    dob: userData.dob || '1970-01-01',
-    gender: userData.gender || '',
-    maritalstatus: userData.maritalstatus || ''
-  };
+//   // Encrypt all sensitive data
+//   const encryptedData = {
+//     mobileno: encrypt(userData.phoneNumber || ''), // Phone optional for Google signup
+//     email: encrypt(userData.email),
+//     password: encrypt(userData.password || crypto.randomBytes(16).toString('hex')), // Generate random password if not provided
+//     userfullname: encrypt(userData.name),
+//     googleid: userData.googleid,
+//     // Google-specific defaults
+//     emailverified: 1, // Mark as verified
+//     userstatus: 1,
+//     emailalerts: 1,
+//     pushalerts: 1,
+//     onlinestatus: 1,
+//     profilepic: userData.profilePicture || DEFAULT_PROFILE_PIC, // Can add profile picture URL from Google
+//       devicetoken: userData.deviceToken || '', // Add device token here
+//     patientlocation: '',
+//     accountotp: '',
+//     dob: userData.dob || '1970-01-01',
+//     gender: userData.gender || '',
+//     maritalstatus: userData.maritalstatus || ''
+//   };
 
-  const [result] = await db.query(
-    `INSERT INTO medusers SET ?`, 
-    encryptedData
-  );
-  return result.insertId;
-}
+//   const [result] = await db.query(
+//     `INSERT INTO medusers SET ?`, 
+//     encryptedData
+//   );
+//   return result.insertId;
+// }
 
 ///google signup
 
@@ -175,7 +175,7 @@ static async createWithGoogle(userData) {
       pushalerts: 1,
       onlinestatus: 1,
       password: '', // No password for Google users
-      devicetoken: '',
+      devicetoken: userData.deviceToken || '', // Add device token here
       patientlocation: '',
       accountotp: '',
       dob: '',

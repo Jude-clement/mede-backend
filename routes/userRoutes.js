@@ -32,65 +32,71 @@ router.get('/reset-password/confirm', (req, res) => {
   }
   
   res.send(`
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Reset Password</title>
-      <style>
-        body { font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; }
-        h1 { color: #333; }
-        input { width: 100%; padding: 10px; margin: 8px 0; box-sizing: border-box; }
-        button { background-color: #4CAF50; color: white; padding: 10px 15px; border: none; cursor: pointer; }
-        button:hover { background-color: #45a049; }
-      </style>
-    </head>
-    <body>
-      <h1>Reset Your Password</h1>
-      <p>You are only one step away from your new password</p>
-      <form id="resetForm">
-        <input type="hidden" name="token" value="${token}">
-        <label for="newPassword">Password</label>
-        <input type="password" id="newPassword" name="newPassword" required>
-        
-        <label for="confirmPassword">Confirm Password</label>
-        <input type="password" id="confirmPassword" name="confirmPassword" required>
-        
-        <button type="submit">Change Password</button>
-      </form>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Reset Password</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; }
+    h1 { color: #333; }
+    input { width: 100%; padding: 10px; margin: 8px 0; box-sizing: border-box; }
+    button { background-color: #4CAF50; color: white; padding: 10px 15px; border: none; cursor: pointer; }
+    button:hover { background-color: #45a049; }
+    .success-message { color: #4CAF50; font-weight: bold; margin-top: 20px; display: none; }
+  </style>
+</head>
+<body>
+  <h1>Reset Your Password</h1>
+  <p>You are only one step away from your new password</p>
+  <form id="resetForm">
+    <input type="hidden" name="token" value="${token}">
+    <label for="newPassword">Password</label>
+    <input type="password" id="newPassword" name="newPassword" required>
+    
+    <label for="confirmPassword">Confirm Password</label>
+    <input type="password" id="confirmPassword" name="confirmPassword" required>
+    
+    <button type="submit">Change Password</button>
+  </form>
+  
+  <div id="successMessage" class="success-message">
+    Password changed successfully! You can close this page now.
+  </div>
+  
+  <script>
+    document.getElementById('resetForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const data = Object.fromEntries(formData.entries());
       
-      <script>
-        document.getElementById('resetForm').addEventListener('submit', async (e) => {
-          e.preventDefault();
-          const formData = new FormData(e.target);
-          const data = Object.fromEntries(formData.entries());
-          
-          if (data.newPassword !== data.confirmPassword) {
-            alert('Passwords do not match');
-            return;
-          }
-          
-          try {
-            const response = await fetch('/api/reset-password/confirm', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(data)
-            });
-            
-            const result = await response.json();
-            if (result.error) {
-              alert(result.message);
-            } else {
-              alert('Password changed successfully!');
-              window.location.href = '/login'; // Redirect to login
-            }
-          } catch (error) {
-            console.error('Error:', error);
-            alert('An error occurred. Please try again.');
-          }
+      if (data.newPassword !== data.confirmPassword) {
+        alert('Passwords do not match');
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/reset-password/confirm', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
         });
-      </script>
-    </body>
-    </html>
+        
+        const result = await response.json();
+        if (result.error) {
+          alert(result.message);
+        } else {
+          // Hide the form and show success message
+          document.getElementById('resetForm').style.display = 'none';
+          document.getElementById('successMessage').style.display = 'block';
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+      }
+    });
+  </script>
+</body>
+</html>
   `);
 });
 

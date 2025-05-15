@@ -10,7 +10,12 @@ exports.signup = async (req, res) => {
     if (!name || !phoneNumber || !email || !password) {
       return res.status(200).json({
         error: true,
-        message: 'All fields are required'
+        message: 'All fields are required',
+        userName: '',
+        phoneNumber: '',
+        profilePicture: '',
+        dob: '',
+        emailVerified: 0
       });
     }
 
@@ -19,7 +24,12 @@ exports.signup = async (req, res) => {
     if (existingEmail) {
       return res.status(200).json({
         error: true,
-        message: 'Email already registered'
+        message: 'Email already registered',
+        userName: '',
+        phoneNumber: '',
+        profilePicture: '',
+        dob: '',
+        emailVerified: 0
       });
     }
 
@@ -27,7 +37,12 @@ exports.signup = async (req, res) => {
     if (existingPhone) {
       return res.status(200).json({
         error: true,
-        message: 'Phone number already registered'
+        message: 'Phone number already registered',
+        userName: '',
+        phoneNumber: '',
+        profilePicture: '',
+        dob: '',
+        emailVerified: 1
       });
     }
 
@@ -50,13 +65,23 @@ exports.signup = async (req, res) => {
 
     res.status(201).json({
       error: false,
-      message: 'User registered. Check your email for verification!'
+      message: 'User registered. Check your email for verification!',
+      userName: name,
+      phoneNumber,
+      profilePicture: '',
+      dob: '',
+      emailVerified: 0
     });
 
   } catch (error) {
     res.status(500).json({ 
       error: true, 
-      message: error.message || 'Registration failed' 
+      message: error.message || 'Registration failed',
+      userName: '',
+      phoneNumber: '',
+      profilePicture: '',
+      dob: '',
+      emailVerified: 0
     });
   }
 };

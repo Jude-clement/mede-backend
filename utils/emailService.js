@@ -50,7 +50,7 @@ async function sendVerificationEmail(email, token) {
   }
 }
 
-// Add this new function
+// Password reset
 async function sendPasswordResetEmail(email, resetUrl) {
   const mailOptions = {
     from: `"Your App" <${process.env.SMTP_FROM_EMAIL}>`,

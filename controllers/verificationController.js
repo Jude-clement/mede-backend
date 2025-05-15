@@ -28,7 +28,7 @@ exports.sendVerification = async (req, res) => {
 
     // Check if already verified
     if (user.emailverified === 1) {
-      return res.status().json({
+      return res.status(200).json({
         error: true,
         message: 'Email is already verified'
       });

@@ -96,7 +96,7 @@ return res.status(200).json({
       message: 'Login successful',
       userName: decryptedUser.userName,
       phoneNumber: decryptedUser.phoneNumber,
-      profilePicture: user.profilepic || DEFAULT_PROFILE_PIC,
+      profilePicture: user.profilepic || '',
       dob: user.dob || '',
       emailVerified: user.emailverified,
       token
@@ -120,10 +120,10 @@ return res.status(200).json({
 // google register
 exports.googleRegister = async (req, res) => {
   try {
-      const { name, email, photoUrl, googleid } = req.body;
+      const { name, email, photoUrl, googleid, deviceToken } = req.body;
 
       // Validate required fields
-      if (!name || !email || !googleid) {
+      if (!name || !email || !googleid || !deviceToken) {
           return res.status(200).json({
               error: true,
               message: 'Name, email and Google ID are required',
@@ -132,6 +132,7 @@ exports.googleRegister = async (req, res) => {
               profilePicture: '',
               dob: '',
               emailVerified: 0,
+              deviceToken : '',
           });
       }
 
@@ -140,19 +141,32 @@ exports.googleRegister = async (req, res) => {
           name,
           email,
           photoUrl: photoUrl || '',
-          googleid
+          googleid,
+          deviceToken : deviceToken || '',
       });
 
       res.status(201).json({
           error: false,
-          message: 'Google registration successful'
+          message: 'Google registration successful',
+          userName: name,
+          phoneNumber: '',
+          profilePicture: photoUrl || '',
+          dob: '',
+          emailVerified: 1,
+          deviceToken : deviceToken,
       });
 
   } catch (error) {
       console.error('Google registration error:', error);
       res.status(200).json({
           error: true,
-          message: error.message || 'Google registration failed'
+          message: error.message || 'Google registration failed',
+          userName: '',
+          phoneNumber: '',
+          profilePicture: '',
+          dob: '',
+          emailVerified: 0,
+          deviceToken : '',
       });
   }
 };
@@ -160,66 +174,81 @@ exports.googleRegister = async (req, res) => {
 ////google login  
 exports.googleLogin = async (req, res) => {
   try {
-      const { googleid, deviceToken = "" } = req.body;
+    const { googleid, deviceToken = "", name, email, photoUrl } = req.body;
 
-      // Validate required fields
-      if (!googleid) {
-          return res.status(200).json({
-              error: true,
-              message: "Google ID is required",
-              userName: "",
-              profilePicture: "",
-              dob: "",
-              token: ""
-          });
-      }
-
-      // Find user by Google ID
-      const user = await User.findByGoogleId(googleid);
-      if (!user) {
-          return res.status(200).json({
-              error: true,
-              message: "Google account not registered",
-              userName: "",
-              profilePicture: "",
-              dob: "",
-              token: ""
-          });
-      }
-
-      // Update device tokens if provided
-      if (deviceToken) {
-          await User.updateDeviceTokens(user.user_id, deviceToken);
-      }
-
-      // Generate JWT token
-      const token = generateToken(user.user_id);
-
-      // Decrypt user data for response
-      const decryptedUser = {
-          userName: decrypt(user.userfullname),
-          // phoneNumber: user.mobileno ? decrypt(user.mobileno) : "",
-          profilePicture: user.profilepic || DEFAULT_PROFILE_PIC,
-          dob: user.dob || ""
-      };
-
-      res.json({
-          error: false,
-          message: "Google login successful",
-          ...decryptedUser,
-          token
+    // Validate required fields
+    if (!googleid) {
+      return res.status(200).json({
+        error: true,
+        message: "Google ID is required",
+        userName: "",
+        profilePicture: "",
+        dob: "",
+        token: ""
       });
+    }
 
-  } catch (error) {
-      console.error('Google login error:', error);
-      res.status(500).json({
+    // Try to find existing user
+    let user = await User.findByGoogleId(googleid);
+
+    // If user doesn't exist, register them automatically
+    if (!user) {
+      // Validate required registration fields
+      if (!name || !email) {
+        return res.status(200).json({
           error: true,
-          message: error.message || "Google login failed",
+          message: "Name and email are required for first-time registration",
           userName: "",
-          phoneNumber: "",
-          profilePicture: "" || DEFAULT_PROFILE_PIC,
+          profilePicture: "",
           dob: "",
           token: ""
+        });
+      }
+
+      // Create new user with Google
+      const userId = await User.createWithGoogle({
+        name,
+        email,
+        googleid,
+        photoUrl
       });
+
+      // Get the newly created user
+      user = await User.findByGoogleId(googleid);
+      if (!user) throw new Error("Failed to create new Google user");
+    }
+
+    // Update device tokens if provided
+    if (deviceToken) {
+      await User.updateDeviceTokens(user.user_id, deviceToken);
+    }
+
+    // Generate JWT token
+    const token = generateToken(user.user_id);
+
+    // Decrypt user data for response
+    const decryptedUser = {
+      userName: decrypt(user.userfullname),
+      phoneNumber: user.mobileno ? decrypt(user.mobileno) : "",
+      profilePicture: user.profilepic || DEFAULT_PROFILE_PIC,
+      dob: user.dob || ""
+    };
+
+    res.json({
+      error: false,
+      message: "Google authentication successful",
+      ...decryptedUser,
+      token
+    });
+
+  } catch (error) {
+    console.error('Google login error:', error);
+    res.status(500).json({
+      error: true,
+      message: error.message || "Google authentication failed",
+      userName: "",
+      profilePicture: "" || DEFAULT_PROFILE_PIC,
+      token: ""
+    });
   }
 };
