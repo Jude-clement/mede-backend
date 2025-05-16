@@ -17,6 +17,7 @@ return res.status(200).json({
   profilepicture: '',
   dob: '',
   emailverified: 0,
+  patientlocation: '',
   token: ''
 });
     }
@@ -35,6 +36,7 @@ return res.status(200).json({
   profilepicture: '',
   dob: '',
   emailverified: 0,
+  patientlocation: '',
   token: ''
 });
     }
@@ -57,6 +59,7 @@ return res.status(200).json({
   profilepicture: '',
   dob: '',
   emailverified: 0,
+  patientlocation: '',
   token: ''
 });
     }
@@ -71,6 +74,7 @@ return res.status(200).json({
         username: '',
         phonenumber: '',
         profilepicture: '',
+        patientlocation: '',
         dob: '',
         token: ''
       });
@@ -93,12 +97,13 @@ return res.status(200).json({
     // Prepare response with decrypted data
     res.json({
       error: false,
-      message: 'Login successful',
+      message: 'Login successfull',
       username: decryptedUser.username,
       phonenumber: decryptedUser.phonenumber,
       profilepicture: user.profilepic || '',
       dob: user.dob || '',
       emailverified: user.emailverified,
+      patientlocation: user.patientlocation,
       token
     });
 
@@ -112,6 +117,7 @@ return res.status(200).json({
       profilepicture: '',
       dob: '',
       emailverified: 0,
+      patientlocation: '',
       token: ''
     });
   }
@@ -132,6 +138,7 @@ exports.googleRegister = async (req, res) => {
               profilepicture: '',
               dob: '',
               emailverified: 0,
+              patientlocation: '',
               devicetoken : '',
           });
       }
@@ -153,6 +160,7 @@ exports.googleRegister = async (req, res) => {
           profilepicture: photourl || '',
           dob: '',
           emailverified: 1,
+          patientlocation: '',
           devicetoken : devicetoken,
       });
 
@@ -166,6 +174,7 @@ exports.googleRegister = async (req, res) => {
           profilepicture: '',
           dob: '',
           emailverified: 0,
+          patientlocation: '',
           devicetoken : '',
       });
   }
@@ -185,6 +194,7 @@ exports.googleLogin = async (req, res) => {
         profilepicture: "",
         phonenumber: "",
         dob: "",
+        patientlocation: "",
         token: ""
       });
     }
@@ -205,6 +215,7 @@ exports.googleLogin = async (req, res) => {
           profilepicture: "",
           phonenumber: "",
           dob: "",
+          patientlocation: "",
           token: ""
         });
       }
@@ -219,6 +230,7 @@ exports.googleLogin = async (req, res) => {
           username: "",
           profilepicture: "",
           dob: "",
+          patientlocation: "",
           token: ""
         });
       }
@@ -235,7 +247,7 @@ exports.googleLogin = async (req, res) => {
       if (!user) throw new Error("Failed to create new Google user");
     }
 
-    // Rest of your existing code...
+    // Rest of existing code...
     if (devicetoken) {
       await User.updateDeviceTokens(user.user_id, devicetoken);
     }
@@ -245,7 +257,8 @@ exports.googleLogin = async (req, res) => {
       username: decrypt(user.userfullname),
       phonenumber: user.mobileno ? decrypt(user.mobileno) : "",
       profilepicture: user.profilepic || DEFAULT_PROFILE_PIC,
-      dob: user.dob || ""
+      dob: user.dob || "",
+      patientlocation: user.patientlocation || "",
     };
 
     res.json({
@@ -262,7 +275,8 @@ exports.googleLogin = async (req, res) => {
       message: error.message || "Google authentication failed",
       username: "",
       profilepicture: "" || DEFAULT_PROFILE_PIC,
-      token: ""
+      token: "",
+      patientlocation: ""
     });
   }
 };

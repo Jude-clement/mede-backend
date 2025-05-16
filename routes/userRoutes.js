@@ -4,6 +4,8 @@ const userController = require('../controllers/userController');
 const authController = require('../controllers/authController');
 const verificationController = require('../controllers/verificationController');
 const passwordController = require('../controllers/passwordController');
+const locationController = require('../controllers/locationController');
+const authenticate = require('../middlewares/authMiddleware');
 
 // User registration route
 // router.post('/signup', userController.signup);
@@ -20,7 +22,10 @@ router.get('/verify-email', verificationController.verifyEmail);  // to verify e
 router.post('/sendverificationemail', verificationController.sendVerification); //to send verification email
 // router.post('/resendverificationemail', verificationController.resendVerificationEmail); //to send verification email
 
+//update location
+router.post('/update-location', authenticate ,locationController.updateLocation);
 
+// reset password 
 router.post('/reset-password', passwordController.requestReset); // Initiate reset
 router.post('/reset-password/confirm', passwordController.resetPassword); // Finalize reset
 
@@ -101,3 +106,11 @@ router.get('/reset-password/confirm', (req, res) => {
 });
 
 module.exports = router;
+
+
+// // in server.js
+// app.post('/update-location', 
+//   multer().none(), // Process form-data first
+//   authMiddleware,  // Then verify token
+//   locationController.updateLocation
+// );

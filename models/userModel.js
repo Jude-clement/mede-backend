@@ -332,6 +332,19 @@ static async updatePassword(userId, newPassword) {
   );
 }
 
+// update location
+static async updatePatientLocation(userId, patientlocation) {
+  try {
+    await db.query(
+      'UPDATE medusers SET patientlocation = ? WHERE user_id = ?',
+      [patientlocation, userId]
+    );
+    return true;
+  } catch (error) {
+    console.error("Location update error:", error);
+    throw error;
+  }
+}
 }
 
 
