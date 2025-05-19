@@ -6,6 +6,7 @@ const verificationController = require('../controllers/verificationController');
 const passwordController = require('../controllers/passwordController');
 const locationController = require('../controllers/locationController');
 const authenticate = require('../middlewares/authMiddleware');
+const advertisementController = require('../controllers/advertisementController');
 
 // User registration route
 // router.post('/signup', userController.signup);
@@ -24,6 +25,8 @@ router.post('/sendverificationemail', verificationController.sendVerification); 
 
 //update location
 router.post('/update-location', authenticate ,locationController.updateLocation);
+//advertisement
+router.post('/dashboardad', authenticate, advertisementController.getAdvertisement);
 
 // reset password 
 router.post('/reset-password', passwordController.requestReset); // Initiate reset

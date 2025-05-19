@@ -4,9 +4,12 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const app = express();
 const multer = require('multer');
+const path = require('path');
 
 // Enhanced middleware configuration
 app.use(cors());
+// Serve static files
+app.use('/ads', express.static(path.join(__dirname, 'public/ads')));
 
 // Custom body parser that handles both JSON and form-data
 app.use((req, res, next) => {
