@@ -1,6 +1,6 @@
 const db = require('../config/db');
-const { encrypt } = require('../utils/encryption');
-const DEFAULT_PROFILE_PIC = 'https://img.freepik.com/premium-vector/user-profile-icon-flat-style-member-avatar-vector-illustration-isolated-background-human-permission-sign-business-concept_157943-15752.jpg?semt=ais_hybrid&w=740';
+const { encrypt, decrypt } = require('../utils/encryption');
+// const DEFAULT_PROFILE_PIC = '../user-icon.avif';
 
 class User {
   static async create(userData) {
@@ -22,14 +22,14 @@ class User {
       emailalerts: 1,
       pushalerts: 1,
       onlinestatus: 1,
-      profilepic: '',
-      googleid: '',
-      devicetoken: '',
-      patientlocation: '',
-      accountotp: '',
-      dob: userData.dob || '1970-01-01', // Default date if not provided
-      gender: userData.gender || '',
-      maritalstatus: userData.maritalstatus || ''
+profilepic: userData.profilepic ? encrypt(userData.profilepic) : '',
+googleid: userData.googleid ? encrypt(userData.googleid) : '',
+devicetoken: userData.devicetoken ? encrypt(userData.devicetoken) : '',
+patientlocation: userData.patientlocation ? encrypt(userData.patientlocation) : '',
+accountotp: userData.accountotp ? encrypt(userData.accountotp) : '',
+  dob: userData.dob ? encrypt(userData.dob) : encrypt('0000-00-00'), // Encrypt default value too
+gender: userData.gender ? encrypt(userData.gender) : '',
+maritalstatus: userData.maritalstatus ? encrypt(userData.maritalstatus) : ''
     };
 
     const [result] = await db.query(
@@ -105,9 +105,11 @@ class User {
   
   static async updateDeviceToken(userId, devicetoken) {
     try {
+    // const encryptedtoken = devicetoken ? encrypt(devicetoken) : '';
+
       await db.query(
         'UPDATE medusers SET devicetoken = ? WHERE user_id = ?',
-        [devicetoken, userId]
+        [ devicetoken, userId]
       );
     } catch (error) {
       console.error("Device token update error:", error);
@@ -170,8 +172,7 @@ static async createWithGoogle(userData) {
       mobileno: userData.phonenumber ? encrypt(userData.phonenumber) : '',
       email: encrypt(userData.email),
       userfullname: encrypt(userData.name),
-      googleid: userData.googleid,
-      profilepic: userData.photourl || '',
+
       // Mark as verified since it's from Google
       emailverified: 1,
       // Default values
@@ -180,12 +181,19 @@ static async createWithGoogle(userData) {
       pushalerts: 1,
       onlinestatus: 1,
       password: '', // No password for Google users
-      devicetoken: userData.devicetoken || '', // Add device token here
-      patientlocation: '',
-      accountotp: '',
-      dob: '',
-      gender: '',
-      maritalstatus: ''
+      googleid: userData.googleid ? encrypt(userData.googleid) : '',
+profilepic: userData.profilepicture ? encrypt(userData.profilepicture) : '',
+devicetoken: userData.devicetoken ? encrypt(userData.devicetoken) : '',
+patientlocation: userData.patientlocation ? encrypt(userData.patientlocation) : '',
+accountotp: userData.accountotp ? encrypt(userData.accountotp) : '',
+  dob: userData.dob ? encrypt(userData.dob) : encrypt('0000-00-00'),
+gender: userData.gender ? encrypt(userData.gender) : '',
+maritalstatus: userData.maritalstatus ? encrypt(userData.maritalstatus) : ''
+      // patientlocation: '',
+      // accountotp: '',
+      // dob: '',
+      // gender: '',
+      // maritalstatus: ''
   };
 
   const [result] = await db.query(
@@ -195,9 +203,10 @@ static async createWithGoogle(userData) {
   return result.insertId;
 }
 
-static async checkExistingGoogleUsers(email, googleId) {
+static async checkExistingGoogleUsers(email, googleid) {
   try {
       const encryptedEmail = encrypt(email);
+      const encryptedgoogleid = encrypt(googleid);
 
       // Check if email exists (normal registration)
       const [emailRows] = await db.query(
@@ -212,7 +221,7 @@ static async checkExistingGoogleUsers(email, googleId) {
       // Check if Google account exists
       const [googleRows] = await db.query(
           'SELECT user_id FROM medusers WHERE googleid = ?',
-          [googleId]
+          [encryptedgoogleid]
       );
 
       if (googleRows.length > 0) {
@@ -241,11 +250,12 @@ static async findByEncryptedEmailWithGoogle(encryptedEmail) {
   }
 }
 
-static async findByGoogleId(googleId) {
+static async findByGoogleId(googleid) {
   try {
+    const encryptedgoogleid = encrypt(googleid);
       const [rows] = await db.query(
           'SELECT * FROM medusers WHERE googleid = ?',
-          [googleId]
+          [encryptedgoogleid]
       );
       return rows[0];
   } catch (error) {
@@ -256,6 +266,7 @@ static async findByGoogleId(googleId) {
 
 static async updateDeviceTokens(userId, newToken) {
   try {
+    
       // Get current tokens
       const [user] = await db.query(
           'SELECT devicetoken FROM medusers WHERE user_id = ?',
@@ -263,19 +274,22 @@ static async updateDeviceTokens(userId, newToken) {
       );
       
       let currentTokens = [];
-      if (user[0].devicetoken) {
-          currentTokens = user[0].devicetoken.split(',');
-      }
+    if (user[0].devicetoken) {
+        currentTokens = user[0].devicetoken.split(','); // These are encrypted
+        // Decrypt each token to check against new token
+        currentTokens = currentTokens.map(token => decrypt(token));
+    }
 
       // Add new token if not already present
-      if (newToken && !currentTokens.includes(newToken)) {
-          currentTokens.push(newToken);
-          const updatedTokens = currentTokens.join(',');
-          await db.query(
-              'UPDATE medusers SET devicetoken = ? WHERE user_id = ?',
-              [updatedTokens, userId]
-          );
-      }
+    if (newToken && !currentTokens.includes(newToken)) {
+        currentTokens.push(newToken);
+        // Encrypt each token individually then join
+        const encryptedTokens = currentTokens.map(token => encrypt(token)).join(',');
+        await db.query(
+            'UPDATE medusers SET devicetoken = ? WHERE user_id = ?',
+            [encryptedTokens, userId]
+        );
+    }
   } catch (error) {
       console.error("Device token update error:", error);
       throw error;
@@ -335,9 +349,13 @@ static async updatePassword(userId, newPassword) {
 // update location
 static async updatePatientLocation(userId, patientlocation) {
   try {
+        const locationparts = patientlocation ? patientlocation.split(',') : [];
+    // Encrypt each part individually
+    const encryptedparts = locationparts.map(part => encrypt(part.trim()));
+    const encryptedpatientlocation = encryptedparts.join(',');
     await db.query(
       'UPDATE medusers SET patientlocation = ? WHERE user_id = ?',
-      [patientlocation, userId]
+      [encryptedpatientlocation, userId]
     );
     return true;
   } catch (error) {
@@ -345,6 +363,84 @@ static async updatePatientLocation(userId, patientlocation) {
     throw error;
   }
 }
+
+//for googleid checking in update profile
+static async findById(userId) {
+  try {
+    const [rows] = await db.query(
+      'SELECT * FROM medusers WHERE user_id = ?',
+      [userId]
+    );
+    return rows[0];
+  } catch (error) {
+    console.error("Database error:", error);
+    throw error;
+  }
+}
+
+// get profile
+static async getProfile(userId) {
+  try {
+    const [rows] = await db.query(
+      'SELECT * FROM medusers WHERE user_id = ?',
+      [userId]
+    );
+    
+    if (!rows[0]) {
+      throw new Error('User not found');
+    }
+
+    const user = rows[0];
+
+        // Handle location decryption if exists
+    let decryptedlocation = '';
+    if (user.patientlocation) {
+      const encryptedParts = user.patientlocation.split(',');
+      const decryptedParts = encryptedParts.map(part => decrypt(part));
+      decryptedlocation = decryptedParts.join(',');
+    }
+
+    return {
+      username: user.userfullname ? decrypt(user.userfullname) : '',
+      phonenumber: user.mobileno ? decrypt(user.mobileno) : '',
+      email: user.email ? decrypt(user.email) : '',
+      gender: decrypt(user.gender) || '',
+      // dob: decrypt(user.dob) || '',
+dob: user.dob ? decrypt(user.dob) || '0000-00-00' : '0000-00-00',
+
+      maritalstatus: decrypt(user.maritalstatus) || '',
+      profilepicture: decrypt(user.profilepic) || DEFAULT_PROFILE_PIC,
+      emailverified: user.emailverified,
+      patientlocation: decryptedlocation || ''
+    };
+  } catch (error) {
+    // console.error('Profile fetch error:', error);
+    throw error;
+  }
+}
+
+static async updateProfile(userId, updateData) {
+  try {
+    // Filter out undefined values
+    const filteredData = Object.fromEntries(
+      Object.entries(updateData).filter(([_, v]) => v !== undefined)
+    );
+
+    if (Object.keys(filteredData).length === 0) {
+      return; // Nothing to update
+    }
+
+    await db.query(
+      'UPDATE medusers SET ? WHERE user_id = ?',
+      [filteredData, userId]
+    );
+  } catch (error) {
+    console.error('Profile update error:', error);
+    throw error;
+  }
+}
+
+
 }
 
 

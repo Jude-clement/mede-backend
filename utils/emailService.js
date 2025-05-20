@@ -26,8 +26,9 @@ async function sendVerificationEmail(email, token) {
     ? token.split('?token=')[1] 
     : token;
   
-  const verificationUrl = `${process.env.BASE_URL}/api/verify-email?token=${encodeURIComponent(cleanToken)}`;
-  
+  // const verificationUrl = `${process.env.BASE_URL}/api/verify-email?token=${encodeURIComponent(cleanToken)}`;
+  const verificationUrl = `/api/verify-email?token=${encodeURIComponent(cleanToken)}`;
+
   const mailOptions = {
     from: `"Your App" <${process.env.SMTP_FROM_EMAIL}>`,
     to: email,

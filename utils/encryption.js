@@ -18,10 +18,16 @@ function encrypt(text) {
 }
 
 function decrypt(encryptedText) {
-  const decipher = crypto.createDecipheriv(algorithm, key, iv);
-  let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
-  decrypted += decipher.final('utf8');
-  return decrypted;
+  if (!encryptedText) return ''; // Return empty string for null/undefined
+  try {
+    const decipher = crypto.createDecipheriv(algorithm, key, iv);
+    let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    return decrypted;
+  } catch (error) {
+    console.error('Decryption error:', error);
+    return ''; // Return empty string on decryption failure
+  }
 }
 
 module.exports = { encrypt, decrypt };

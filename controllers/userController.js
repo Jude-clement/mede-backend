@@ -57,8 +57,8 @@ exports.signup = async (req, res) => {
    // Generate and save verification token
     // Generate verification link (email itself is the token when encrypted)
     const verificationToken = encrypt(email); // Reuse encryption utils
-    // const verificationUrl = `${process.env.BASE_URL}/api/verify-email?token=${verificationToken}`;
-    const verificationUrl = `${process.env.BASE_URL}/api/verify-email?token=${encodeURIComponent(verificationToken)}`;
+    // const verificationUrl = `${process.env.BASE_URL}/api/verify-email?token=${encodeURIComponent(verificationToken)}`;
+    const verificationUrl = `/api/verify-email?token=${encodeURIComponent(verificationToken)}`;
 
     // Send email (pseudo-code - use your email service)
     await sendVerificationEmail(email, verificationUrl);

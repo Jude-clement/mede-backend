@@ -1,7 +1,8 @@
 const User = require('../models/userModel');
 const { encrypt, decrypt } = require('../utils/encryption');
 const { generateToken } = require('../utils/jwt');
-const DEFAULT_PROFILE_PIC = 'https://img.freepik.com/premium-vector/user-profile-icon-flat-style-member-avatar-vector-illustration-isolated-background-human-permission-sign-business-concept_157943-15752.jpg?semt=ais_hybrid&w=740';
+
+const DEFAULT_PROFILE_PIC = '/user-icon.avif'; // Default profile picture path
 
 exports.login = async (req, res) => {
   try {
@@ -46,7 +47,11 @@ return res.status(200).json({
       email: decrypt(user.email),
       password: decrypt(user.password),
       username: decrypt(user.userfullname),
-      phonenumber: decrypt(user.mobileno)
+      phonenumber: decrypt(user.mobileno),
+  profilepicture: user.profilepic ? decrypt(user.profilepic) : DEFAULT_PROFILE_PIC, // Fixed here
+      dob: decrypt(user.dob),
+      patientlocation: decrypt(user.patientlocation)
+
     };
 
     // Validate credentials against decrypted data
@@ -80,16 +85,24 @@ return res.status(200).json({
       });
     }
     
-    // Handle device token
-    if (devicetoken) {
-      const currentTokens = user.devicetoken ? user.devicetoken.split(',') : [];
-      
-      // Only add if token doesn't exist
-      if (!currentTokens.includes(devicetoken)) {
-        const updatedTokens = [...currentTokens, devicetoken].join(',');
-        await User.updateDeviceToken(user.user_id, updatedTokens);
-      }
-    }
+// Handle device token
+if (devicetoken) {
+  let currentTokens = [];
+  if (user.devicetoken) {
+    // Split the stored encrypted tokens
+    const encryptedTokens = user.devicetoken.split(',');
+    // Decrypt each token to check against new token
+    currentTokens = encryptedTokens.map(token => decrypt(token));
+  }
+  
+  // Only add if token doesn't exist
+  if (!currentTokens.includes(devicetoken)) {
+    currentTokens.push(devicetoken);
+    // Encrypt each token individually then join with comma
+    const updatedEncryptedTokens = currentTokens.map(token => encrypt(token)).join(',');
+    await User.updateDeviceToken(user.user_id, updatedEncryptedTokens);
+  }
+}
 
     // Generate JWT token
     const token = generateToken(user.user_id);
@@ -100,10 +113,10 @@ return res.status(200).json({
       message: 'Login successfull',
       username: decryptedUser.username,
       phonenumber: decryptedUser.phonenumber,
-      profilepicture: user.profilepic || '',
-      dob: user.dob || '',
+      profilepicture: decryptedUser.profilepic || DEFAULT_PROFILE_PIC,
+      dob: decryptedUser.dob || '',
       emailverified: user.emailverified,
-      patientlocation: user.patientlocation,
+      patientlocation: decryptedUser.patientlocation,
       token
     });
 
@@ -256,9 +269,9 @@ exports.googleLogin = async (req, res) => {
     const decryptedUser = {
       username: decrypt(user.userfullname),
       phonenumber: user.mobileno ? decrypt(user.mobileno) : "",
-      profilepicture: user.profilepic || DEFAULT_PROFILE_PIC,
-      dob: user.dob || "",
-      patientlocation: user.patientlocation || "",
+      profilepicture: user.profilepic ? decrypt(user.profilepic) : "" || DEFAULT_PROFILE_PIC,
+      dob: user.dob ? decrypt(user.dob) : "",
+      patientlocation: user.patientlocation ? decrypt(user.patientlocation) : "",
     };
 
     res.json({
