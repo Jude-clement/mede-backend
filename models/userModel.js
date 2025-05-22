@@ -1,6 +1,6 @@
 const db = require('../config/db');
 const { encrypt, decrypt } = require('../utils/encryption');
-// const DEFAULT_PROFILE_PIC = '../user-icon.avif';
+// const DEFAULT_PROFILE_PIC = '../user-icon.jpg';
 
 class User {
   static async create(userData) {
@@ -296,7 +296,7 @@ static async updateDeviceTokens(userId, newToken) {
   }
 }
 
-// Add these methods to your User class:
+// Add these methods to User class
 
 static async setVerificationToken(userId, token, expiresAt) {
   await db.query(
@@ -406,7 +406,10 @@ static async getProfile(userId) {
       email: user.email ? decrypt(user.email) : '',
       gender: decrypt(user.gender) || '',
       // dob: decrypt(user.dob) || '',
-dob: user.dob ? decrypt(user.dob) || '0000-00-00' : '0000-00-00',
+// dob: user.dob ? decrypt(user.dob) || '0000-00-00' : '0000-00-00',
+dob: user.dob && user.dob !== encrypt('0000-00-00') 
+     ? decrypt(user.dob) 
+     : '0000-00-00',
 
       maritalstatus: decrypt(user.maritalstatus) || '',
       profilepicture: decrypt(user.profilepic) || DEFAULT_PROFILE_PIC,
@@ -440,7 +443,38 @@ static async updateProfile(userId, updateData) {
   }
 }
 
-
+// change password
+static async changePassword(userId, oldPassword, newPassword) {
+  try {
+    // Get current password
+    const [rows] = await db.query(
+      'SELECT password FROM medusers WHERE user_id = ?',
+      [userId]
+    );
+    
+    if (!rows[0]) throw new Error('User not found');
+    
+    // Verify old password
+    const currentEncryptedPassword = rows[0].password;
+    const decryptedOldPassword = decrypt(currentEncryptedPassword);
+    
+    if (decryptedOldPassword !== oldPassword) {
+      throw new Error('Current password is incorrect');
+    }
+    
+    // Encrypt and update new password
+    const encryptedNewPassword = encrypt(newPassword);
+    await db.query(
+      'UPDATE medusers SET password = ? WHERE user_id = ?',
+      [encryptedNewPassword, userId]
+    );
+    
+    return true;
+  } catch (error) {
+    console.error('Password change error:', error);
+    throw error;
+  }
+}
 }
 
 

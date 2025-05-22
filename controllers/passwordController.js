@@ -1,7 +1,8 @@
 const User = require('../models/userModel');
 const { encrypt, decrypt } = require('../utils/encryption');
 const { sendPasswordResetEmail } = require('../utils/emailService');
-
+const { verifyToken } = require('../utils/jwt');
+const db = require('../config/db');
 exports.requestReset = async (req, res) => {
   try {
     const { email } = req.body;
@@ -81,6 +82,50 @@ exports.resetPassword = async (req, res) => {
     res.status(500).json({
       error: true,
       message: error.message || 'Password reset failed'
+    });
+  }
+};
+
+
+exports.changePassword = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { oldpassword, newpassword } = req.body;
+
+    // Validate input
+    if (!oldpassword || !newpassword) {
+      return res.status(200).json({
+        error: true,
+        message: 'Both old and new passwords are required'
+      });
+    }
+
+    if (oldpassword === newpassword) {
+      return res.status(200).json({
+        error: true,
+        message: 'New password must be different from current password'
+      });
+    }
+
+    // Add password strength validation if needed
+    if (newpassword.length < 8) {
+      return res.status(200).json({
+        error: true,
+        message: 'Password must be at least 8 characters long'
+      });
+    }
+
+    await User.changePassword(userId, oldpassword, newpassword);
+
+    res.status(200).json({
+      error: false,
+      message: 'Password changed successfully'
+    });
+
+  } catch (error) {
+    res.status(200).json({
+      error: true,
+      message: error.message || 'Failed to change password'
     });
   }
 };

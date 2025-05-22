@@ -29,7 +29,7 @@ exports.getAdvertisement = async (req, res) => {
 
     // Select random ad
     const randomAd = adFiles[Math.floor(Math.random() * adFiles.length)];
-    const imagepath = `${BASE_URL}/ads/${randomAd}`;
+    const imagepath = `/ads/${randomAd}`;
     // const imagepath = `/ads/${randomAd}`;
 
     res.status(200).json({

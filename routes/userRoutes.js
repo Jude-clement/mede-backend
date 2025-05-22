@@ -8,6 +8,7 @@ const locationController = require('../controllers/locationController');
 const authenticate = require('../middlewares/authMiddleware');
 const advertisementController = require('../controllers/advertisementController');
 const profileController = require('../controllers/profileController');
+const notificationController = require('../controllers/notificationController');
 
 // User registration route
 // router.post('/signup', userController.signup);
@@ -36,6 +37,12 @@ router.post('/editprofile', authenticate, profileController.editProfile);
 // reset password 
 router.post('/reset-password', passwordController.requestReset); // Initiate reset
 router.post('/reset-password/confirm', passwordController.resetPassword); // Finalize reset
+
+router.post('/changepassword', authenticate, passwordController.changePassword);
+
+//notification
+router.post('/setemailnote', authenticate, notificationController.setEmailNotification);
+router.post('/setpushnote', authenticate, notificationController.setPushNotification);
 
 //for showing message
 router.get('/reset-password/confirm', (req, res) => {

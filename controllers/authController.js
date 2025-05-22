@@ -2,7 +2,7 @@ const User = require('../models/userModel');
 const { encrypt, decrypt } = require('../utils/encryption');
 const { generateToken } = require('../utils/jwt');
 
-const DEFAULT_PROFILE_PIC = '/user-icon.avif'; // Default profile picture path
+const DEFAULT_PROFILE_PIC = '/user-icon.jpg'; // Default profile picture path
 
 exports.login = async (req, res) => {
   try {
@@ -114,7 +114,10 @@ if (devicetoken) {
       username: decryptedUser.username,
       phonenumber: decryptedUser.phonenumber,
       profilepicture: decryptedUser.profilepic || DEFAULT_PROFILE_PIC,
-      dob: decryptedUser.dob || '',
+      // dob: decryptedUser.dob || '',
+      dob: (decryptedUser.dob && decryptedUser.dob !== '0000-00-00') 
+     ? decryptedUser.dob 
+     : '0000-00-00',
       emailverified: user.emailverified,
       patientlocation: decryptedUser.patientlocation,
       token

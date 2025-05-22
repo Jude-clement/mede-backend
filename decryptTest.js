@@ -4,7 +4,7 @@ const { decrypt } = require('./utils/encryption');
 const encryptedEmail = '72f2233012105e3aabf761a18a9baae1';
 // const encryptedPhone = '5dcb55deecd0a6514a30d1ec2ae5666e';
 const encryptedName = 'e9e82f7e9e537b9237e5d063ebdc2cbe';
-// const encryptedPassword = 'd20acf4b6017099bf080c5491ea1c42160a10668b0fbf5c36fcd83642e96ca0a';
+const encryptedPassword = '540d73960548891ab7cbe6830f2e6f43';
 // const encryptedgoogleid = 'b2253635c5e62f82d28f9df191d24f8f';
 const encrypteddevicetoken = '9688252ab968390d097193a716a4591e';
 // const encrypteddeviceid = '';
@@ -28,8 +28,8 @@ console.log('Decrypted Email:', decrypt(encryptedEmail));
 console.log('\nEncrypted Name:', encryptedName);
 console.log('Decrypted Name:', decrypt(encryptedName));
 
-// console.log('\nEncrypted Password:', encryptedPassword);
-// console.log('Decrypted Password:', decrypt(encryptedPassword));
+console.log('\nEncrypted Password:', encryptedPassword);
+console.log('Decrypted Password:', decrypt(encryptedPassword));
 
 // console.log('\nEncrypted Google ID:', encryptedgoogleid);
 // console.log('Decrypted Google ID:', decrypt(encryptedgoogleid));

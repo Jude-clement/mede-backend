@@ -1,6 +1,6 @@
 const User = require('../models/userModel');
 const { decrypt, encrypt } = require('../utils/encryption');
-DEFAULT_PROFILE_PIC='/user-icon.avif';
+DEFAULT_PROFILE_PIC='/user-icon.jpg';
 const { generateVerificationToken, sendVerificationEmail } = require('../utils/emailService');
 
 //get profile
@@ -97,7 +97,9 @@ exports.editProfile = async (req, res) => {
       userfullname: username ? encrypt(username) : undefined,
       mobileno: phonenumber ? encrypt(phonenumber) : undefined,
       gender: gender ? encrypt(gender) : undefined,
-      dob: dob ? encrypt(dob) : undefined,
+      // dob: dob ? encrypt(dob) : undefined,
+        dob: dob !== undefined ? encrypt(dob) : encrypt('0000-00-00'),
+
       maritalstatus: maritalstatus ? encrypt(maritalstatus) : undefined,
       profilepic: profilepicture ? encrypt(profilepicture) : 
                  (currentProfile.profilepicture ? undefined : encrypt(DEFAULT_PROFILE_PIC))
