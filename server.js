@@ -10,6 +10,8 @@ const path = require('path');
 app.use(cors());
 // Serve static files
 app.use('/ads', express.static(path.join(__dirname, 'public/ads')));
+//
+app.use('/profile-pics', express.static(path.join(__dirname, 'public/profile-pics')));
 
 // Custom body parser that handles both JSON and form-data
 app.use((req, res, next) => {

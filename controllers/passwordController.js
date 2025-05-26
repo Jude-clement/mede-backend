@@ -22,8 +22,8 @@ exports.requestReset = async (req, res) => {
     const resetToken = encrypt(email + Date.now()); // Unique token
     
     // Send email with reset link
-    const resetUrl = `${process.env.BASE_URL}/api/reset-password/confirm?token=${encodeURIComponent(resetToken)}`;
-    // const resetUrl = `/api/reset-password/confirm?token=${encodeURIComponent(resetToken)}`;
+    const resetUrl = `${process.env.BASE_URL}/api/pass/reset-password/confirm?token=${encodeURIComponent(resetToken)}`;
+    // const resetUrl = `/api/pass/reset-password/confirm?token=${encodeURIComponent(resetToken)}`;
  
     await sendPasswordResetEmail(email, resetUrl);
 

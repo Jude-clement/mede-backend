@@ -18,7 +18,13 @@ function encrypt(text) {
 }
 
 function decrypt(encryptedText) {
-  if (!encryptedText) return ''; // Return empty string for null/undefined
+  // if (!encryptedText) return ''; // Return empty string for null/undefined
+  
+  // Skip decryption if it doesn't look like hex
+  // if (!/^[0-9a-fA-F]+$/.test(encryptedText)) {
+  //   return encryptedText;
+  // }
+
   try {
     const decipher = crypto.createDecipheriv(algorithm, key, iv);
     let decrypted = decipher.update(encryptedText, 'hex', 'utf8');

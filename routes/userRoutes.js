@@ -12,40 +12,40 @@ const notificationController = require('../controllers/notificationController');
 
 // User registration route
 // router.post('/signup', userController.signup);
-router.post('/login', authController.login);
+router.post('/auth/login', authController.login);
 
 // Google registration route
-router.post('/googleregister', authController.googleRegister);
+router.post('/auth/googleregister', authController.googleRegister);
 // Google login route 
-router.post('/googlelogin', authController.googleLogin);
+router.post('/auth/googlelogin', authController.googleLogin);
 
 
-router.post('/signup', userController.signup);
-router.get('/verify-email', verificationController.verifyEmail);  // to verify email
-router.post('/sendverificationemail', verificationController.sendVerification); //to send verification email
+router.post('/auth/signup', userController.signup);
+router.get('/auth/verify-email', verificationController.verifyEmail);  // to verify email
+router.post('/auth/sendverificationemail', verificationController.sendVerification); //to send verification email
 // router.post('/resendverificationemail', verificationController.resendVerificationEmail); //to send verification email
 
 //update location
-router.post('/update-location', authenticate ,locationController.updateLocation);
+router.post('/location/update-location', authenticate ,locationController.updateLocation);
 //advertisement
-router.post('/dashboardad', authenticate, advertisementController.getAdvertisement);
+router.post('/ad/dashboard', authenticate, advertisementController.getAdvertisement);
 
 //profile
-router.post('/profile', authenticate, profileController.getProfile);
+router.post('/user/profile', authenticate, profileController.getProfile);
 //edit profile
-router.post('/editprofile', authenticate, profileController.editProfile);
+router.post('/user/editprofile', authenticate, profileController.editProfile);
 // reset password 
-router.post('/reset-password', passwordController.requestReset); // Initiate reset
-router.post('/reset-password/confirm', passwordController.resetPassword); // Finalize reset
+router.post('/pass/reset-password', passwordController.requestReset); // Initiate reset
+router.post('/pass/reset-password/confirm', passwordController.resetPassword); // Finalize reset
 
-router.post('/changepassword', authenticate, passwordController.changePassword);
+router.post('/pass/changepassword', authenticate, passwordController.changePassword);
 
 //notification
-router.post('/setemailnote', authenticate, notificationController.setEmailNotification);
-router.post('/setpushnote', authenticate, notificationController.setPushNotification);
+router.post('/notify/setemailnote', authenticate, notificationController.setEmailNotification);
+router.post('/notify/setpushnote', authenticate, notificationController.setPushNotification);
 
 //for showing message
-router.get('/reset-password/confirm', (req, res) => {
+router.get('/pass/reset-password/confirm', (req, res) => {
   const { token } = req.query;
   if (!token) {
     return res.status(200).send('Invalid reset link');
@@ -95,7 +95,7 @@ router.get('/reset-password/confirm', (req, res) => {
       }
       
       try {
-        const response = await fetch('/api/reset-password/confirm', {
+        const response = await fetch('/api/pass/reset-password/confirm', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data)

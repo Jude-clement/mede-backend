@@ -2,7 +2,8 @@ const User = require('../models/userModel');
 const { encrypt, decrypt } = require('../utils/encryption');
 const { generateToken } = require('../utils/jwt');
 
-const DEFAULT_PROFILE_PIC = '/user-icon.jpg'; // Default profile picture path
+// const DEFAULT_PROFILE_PIC = '/user-icon.jpg'; // Default profile picture path
+const { DEFAULT_PROFILE_PIC } = require('../utils/imageHandler');
 
 exports.login = async (req, res) => {
   try {
@@ -19,6 +20,8 @@ return res.status(200).json({
   dob: '',
   emailverified: 0,
   patientlocation: '',
+  emailalerts: 0,
+  pushalerts: 0,
   token: ''
 });
     }
@@ -38,6 +41,8 @@ return res.status(200).json({
   dob: '',
   emailverified: 0,
   patientlocation: '',
+  emailalerts: 0,
+  pushalerts: 0,
   token: ''
 });
     }
@@ -48,12 +53,38 @@ return res.status(200).json({
       password: decrypt(user.password),
       username: decrypt(user.userfullname),
       phonenumber: decrypt(user.mobileno),
-  profilepicture: user.profilepic ? decrypt(user.profilepic) : DEFAULT_PROFILE_PIC, // Fixed here
-      dob: decrypt(user.dob),
-      patientlocation: decrypt(user.patientlocation)
+  // profilepicture: user.profilepic ? decrypt(user.profilepic) : DEFAULT_PROFILE_PIC, // Fixed here
+      profilepicture: user.profilepic 
+      ? `/profile-pics/${decrypt(user.profilepic)}.jpg`
+      : DEFAULT_PROFILE_PIC,
+
+      // dob: decrypt(user.dob),
+      // dob: user.dob ? decrypt(user.dob).split('T')[0] : '0000-00-00',
+  // dob: user.dob ? 
+  //      (typeof decrypt(user.dob) === 'string' ? 
+  //       decrypt(user.dob).split('T')[0] : 
+  //       '0000-00-00') : 
+  //      '0000-00-00',
+    dob: user.dob ? decrypt(user.dob) : '0000-00-00',
+      // patientlocation: decrypt(user.patientlocation)
 
     };
-
+        // Handle location decryption if exists
+    let decryptedlocation = '';
+    if (user.patientlocation) {
+      const encryptedParts = user.patientlocation.split(',');
+      const decryptedParts = encryptedParts.map(part => decrypt(part));
+      decryptedlocation = decryptedParts.join(',');
+    }
+    
+    // Handle DOB - NEW ROBUST VERSION
+    // let formattedDob = '0000-00-00';
+    // if (user.dob && user.dob !== encrypt('0000-00-00')) {
+    //   const decrypted = decrypt(user.dob);
+    //   formattedDob = decrypted.includes('T') 
+    //     ? decrypted.split('T')[0] 
+    //     : decrypted;
+    // }
     // Validate credentials against decrypted data
     if (email !== decryptedUser.email || password !== decryptedUser.password) {
 return res.status(200).json({
@@ -65,6 +96,8 @@ return res.status(200).json({
   dob: '',
   emailverified: 0,
   patientlocation: '',
+  emailalerts: 0,
+  pushalerts: 0,
   token: ''
 });
     }
@@ -81,6 +114,8 @@ return res.status(200).json({
         profilepicture: '',
         patientlocation: '',
         dob: '',
+        emailalerts: 0,
+        pushalerts: 0,
         token: ''
       });
     }
@@ -113,13 +148,19 @@ if (devicetoken) {
       message: 'Login successfull',
       username: decryptedUser.username,
       phonenumber: decryptedUser.phonenumber,
-      profilepicture: decryptedUser.profilepic || DEFAULT_PROFILE_PIC,
+      profilepicture: decryptedUser.profilepicture,
       // dob: decryptedUser.dob || '',
-      dob: (decryptedUser.dob && decryptedUser.dob !== '0000-00-00') 
-     ? decryptedUser.dob 
-     : '0000-00-00',
+    //   dob: (decryptedUser.dob && decryptedUser.dob !== '0000-00-00') 
+    //  ? decryptedUser.dob 
+    //  : '0000-00-00',
+    dob: decryptedUser.dob,
+
       emailverified: user.emailverified,
-      patientlocation: decryptedUser.patientlocation,
+      emailalerts: user.emailalerts,
+      pushalerts: user.pushalerts,
+      // patientlocation: decryptedUser.patientlocation,
+            patientlocation: decryptedlocation || '',
+
       token
     });
 
@@ -133,6 +174,8 @@ if (devicetoken) {
       profilepicture: '',
       dob: '',
       emailverified: 0,
+      emailalerts: 0,
+      pushalerts: 0,
       patientlocation: '',
       token: ''
     });
@@ -156,6 +199,8 @@ exports.googleRegister = async (req, res) => {
               emailverified: 0,
               patientlocation: '',
               devicetoken : '',
+              emailalerts: 0,
+              pushalerts: 0
           });
       }
 
@@ -176,8 +221,10 @@ exports.googleRegister = async (req, res) => {
           profilepicture: photourl || '',
           dob: '',
           emailverified: 1,
+          emailalerts: 1,
+          pushalerts: 1,
           patientlocation: '',
-          devicetoken : devicetoken,
+          devicetoken : devicetoken || '',
       });
 
   } catch (error) {
@@ -190,6 +237,8 @@ exports.googleRegister = async (req, res) => {
           profilepicture: '',
           dob: '',
           emailverified: 0,
+          emailalerts: 0,
+          pushalerts: 0,
           patientlocation: '',
           devicetoken : '',
       });
@@ -210,7 +259,9 @@ exports.googleLogin = async (req, res) => {
         profilepicture: "",
         phonenumber: "",
         dob: "",
-        patientlocation: "",
+        patientlocation: "",        
+        emailalerts: 0,
+        pushalerts: 0,
         token: ""
       });
     }
@@ -231,7 +282,9 @@ exports.googleLogin = async (req, res) => {
           profilepicture: "",
           phonenumber: "",
           dob: "",
-          patientlocation: "",
+          patientlocation: "",          
+          emailalerts: 0,
+          pushalerts: 0,
           token: ""
         });
       }
@@ -246,7 +299,9 @@ exports.googleLogin = async (req, res) => {
           username: "",
           profilepicture: "",
           dob: "",
-          patientlocation: "",
+          patientlocation: "",          
+          emailalerts: 0,
+          pushalerts: 0,
           token: ""
         });
       }
@@ -272,15 +327,38 @@ exports.googleLogin = async (req, res) => {
     const decryptedUser = {
       username: decrypt(user.userfullname),
       phonenumber: user.mobileno ? decrypt(user.mobileno) : "",
-      profilepicture: user.profilepic ? decrypt(user.profilepic) : "" || DEFAULT_PROFILE_PIC,
-      dob: user.dob ? decrypt(user.dob) : "",
-      patientlocation: user.patientlocation ? decrypt(user.patientlocation) : "",
+profilepicture: user.profilepic ? decrypt(user.profilepic) : DEFAULT_PROFILE_PIC,
+      // dob: user.dob ? decrypt(user.dob) : "",
+        dob: user.dob ? decrypt(user.dob) : '0000-00-00',
+      // patientlocation: user.patientlocation ? decrypt(user.patientlocation) : "",
+      emailalerts: user.emailalerts,
+      pushalerts: user.pushalerts
     };
-
+        // Handle location decryption if exists
+    let decryptedlocation = '';
+    if (user.patientlocation) {
+      const encryptedParts = user.patientlocation.split(',');
+      const decryptedParts = encryptedParts.map(part => decrypt(part));
+      decryptedlocation = decryptedParts.join(',');
+    }
     res.json({
       error: false,
       message: "Google authentication successful",
-      ...decryptedUser,
+      // ...decryptedUser,
+        username: decryptedUser.username,
+  phonenumber: decryptedUser.phonenumber,
+  profilepicture: decryptedUser.profilepicture, // This should now work correctly
+  // dob: decryptedUser.dob,
+    dob: decryptedUser.dob ? 
+       (typeof decrypt(user.dob) === 'string' ? 
+        decrypt(user.dob).split('T')[0] : 
+        '0000-00-00') : 
+       '0000-00-00',
+  // patientlocation: decryptedUser.patientlocation,
+                  patientlocation: decryptedlocation || '',
+
+  emailalerts: decryptedUser.emailalerts,
+  pushalerts: decryptedUser.pushalerts,
       token
     });
 
@@ -292,7 +370,9 @@ exports.googleLogin = async (req, res) => {
       username: "",
       profilepicture: "" || DEFAULT_PROFILE_PIC,
       token: "",
-      patientlocation: ""
+      patientlocation: "",
+      emailalerts: 0,
+      pushalerts: 0
     });
   }
 };

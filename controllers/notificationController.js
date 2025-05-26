@@ -7,7 +7,7 @@ exports.setEmailNotification = async (req, res) => {
     if (!userId) {
       return res.status(200).json({
         error: true,
-        emailalerts: "",
+        emailalerts: 0,
         message: "User ID is required"
       });
     }
@@ -24,7 +24,7 @@ exports.setEmailNotification = async (req, res) => {
     console.error('Email notification error:', error);
     res.status(200).json({
       error: true,
-      emailalerts: "",
+      emailalerts: 0,
       message: error.message || "Failed to update email notification settings"
     });
   }
@@ -37,7 +37,7 @@ exports.setPushNotification = async (req, res) => {
     if (!userId) {
       return res.status(200).json({
         error: true,
-        pushalerts: "",
+        pushalerts: 0,
         message: "User ID is required"
       });
     }
@@ -54,7 +54,7 @@ exports.setPushNotification = async (req, res) => {
     console.error('Push notification error:', error);
     res.status(200).json({
       error: true,
-      pushalerts: "",
+      pushalerts: 0,
       message: error.message || "Failed to update push notification settings"
     });
   }

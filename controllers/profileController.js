@@ -1,6 +1,6 @@
 const User = require('../models/userModel');
 const { decrypt, encrypt } = require('../utils/encryption');
-DEFAULT_PROFILE_PIC='/user-icon.jpg';
+const { DEFAULT_PROFILE_PIC } = require('../utils/imageHandler');
 const { generateVerificationToken, sendVerificationEmail } = require('../utils/emailService');
 
 //get profile
@@ -27,7 +27,9 @@ exports.getProfile = async (req, res) => {
       dob: '',
       maritalstatus: '',
       profilepicture: '',
-      emailverified: 0
+      emailverified: '',
+      emailalerts: '',
+      pushalerts : '',
     });
   }
 };
@@ -98,11 +100,17 @@ exports.editProfile = async (req, res) => {
       mobileno: phonenumber ? encrypt(phonenumber) : undefined,
       gender: gender ? encrypt(gender) : undefined,
       // dob: dob ? encrypt(dob) : undefined,
-        dob: dob !== undefined ? encrypt(dob) : encrypt('0000-00-00'),
+        // dob: dob !== undefined ? encrypt(dob) : encrypt('0000-00-00'),
+    dob: dob ? encrypt(dob) : encrypt('0000-00-00'),
 
       maritalstatus: maritalstatus ? encrypt(maritalstatus) : undefined,
-      profilepic: profilepicture ? encrypt(profilepicture) : 
-                 (currentProfile.profilepicture ? undefined : encrypt(DEFAULT_PROFILE_PIC))
+      // profilepic: profilepicture ? encrypt(profilepicture) : 
+      //            (currentProfile.profilepicture ? undefined : encrypt(DEFAULT_PROFILE_PIC))
+        profilepicture: profilepicture // Send as-is, let userModel handle it
+
+    //   profilepic: profilepicture && profilepicture.includes('base64') 
+    // ? encrypt(profilepicture) 
+    // : (currentProfile.profilepicture ? undefined : encrypt(DEFAULT_PROFILE_PIC))
     };
 
     // Check if email is being changed
@@ -128,7 +136,7 @@ exports.editProfile = async (req, res) => {
     // Send verification email if email was changed
     if (shouldSendVerification) {
       const verificationToken = encrypt(email);
-      const verificationUrl = `/api/verify-email?token=${encodeURIComponent(verificationToken)}`;
+      const verificationUrl = `/api/auth/verify-email?token=${encodeURIComponent(verificationToken)}`;
       await sendVerificationEmail(email, verificationUrl);
     }
 

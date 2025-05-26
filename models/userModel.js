@@ -1,6 +1,7 @@
 const db = require('../config/db');
 const { encrypt, decrypt } = require('../utils/encryption');
 // const DEFAULT_PROFILE_PIC = '../user-icon.jpg';
+const { saveBase64Image, deleteProfilePic, DEFAULT_PROFILE_PIC } = require('../utils/imageHandler');
 
 class User {
   static async create(userData) {
@@ -182,7 +183,7 @@ static async createWithGoogle(userData) {
       onlinestatus: 1,
       password: '', // No password for Google users
       googleid: userData.googleid ? encrypt(userData.googleid) : '',
-profilepic: userData.profilepicture ? encrypt(userData.profilepicture) : '',
+      profilepic: userData.photourl ? encrypt(userData.photourl) : '',
 devicetoken: userData.devicetoken ? encrypt(userData.devicetoken) : '',
 patientlocation: userData.patientlocation ? encrypt(userData.patientlocation) : '',
 accountotp: userData.accountotp ? encrypt(userData.accountotp) : '',
@@ -400,21 +401,41 @@ static async getProfile(userId) {
       decryptedlocation = decryptedParts.join(',');
     }
 
+    // Handle DOB - NEW ROBUST VERSION
+    // let formattedDob = '0000-00-00';
+    // if (user.dob && user.dob !== encrypt('0000-00-00')) {
+    //   const decrypted = decrypt(user.dob);
+    //   formattedDob = decrypted.includes('T') 
+    //     ? decrypted.split('T')[0] 
+    //     : decrypted;
+    // }
     return {
       username: user.userfullname ? decrypt(user.userfullname) : '',
       phonenumber: user.mobileno ? decrypt(user.mobileno) : '',
       email: user.email ? decrypt(user.email) : '',
       gender: decrypt(user.gender) || '',
+      // gender: user.gender ? decrypt(user.gender) : '',
+
       // dob: decrypt(user.dob) || '',
 // dob: user.dob ? decrypt(user.dob) || '0000-00-00' : '0000-00-00',
-dob: user.dob && user.dob !== encrypt('0000-00-00') 
-     ? decrypt(user.dob) 
-     : '0000-00-00',
+// dob: user.dob && user.dob !== encrypt('0000-00-00') 
+//      ? decrypt(user.dob) 
+//      : '0000-00-00',
+    // dob: user.dob ? decrypt(user.dob) : '0000-00-00',
+          // dob: formattedDob, // Use the properly formatted DOB
+  // dob: decryptedUser.dob, // SIMPLIFIED
+      dob: user.dob ? decrypt(user.dob) : '0000-00-00', // SIMPLIFIED - like other fields
 
       maritalstatus: decrypt(user.maritalstatus) || '',
-      profilepicture: decrypt(user.profilepic) || DEFAULT_PROFILE_PIC,
+
+    profilepicture: user.profilepic 
+      ? `/profile-pics/${decrypt(user.profilepic)}.jpg`
+      : DEFAULT_PROFILE_PIC,     
+      
       emailverified: user.emailverified,
-      patientlocation: decryptedlocation || ''
+      patientlocation: decryptedlocation || '',
+      emailalerts: user.emailalerts,
+      pushalerts: user.pushalerts
     };
   } catch (error) {
     // console.error('Profile fetch error:', error);
@@ -422,22 +443,62 @@ dob: user.dob && user.dob !== encrypt('0000-00-00')
   }
 }
 
+// update profile
 static async updateProfile(userId, updateData) {
+  let newImageInfo = null;
+  
+  // Handle profile picture update if it's a base64 string (new image)
+  if (updateData.profilepicture && updateData.profilepicture.includes('base64')) {
+    try {
+      // Get current profile to check for existing picture
+      const current = await this.getProfile(userId);
+      
+      // Save new image
+      newImageInfo = await saveBase64Image(userId, updateData.profilepicture);
+      
+      // Use the encrypted filename from saveBase64Image
+      updateData.profilepic = newImageInfo.encryptedFilename;
+      
+      // Delete old image if it exists and isn't default
+      if (current.profilepicture && 
+          !current.profilepicture.includes(DEFAULT_PROFILE_PIC)) {
+        // Get the encrypted filename from DB
+        const [user] = await db.query(
+          'SELECT profilepic FROM medusers WHERE user_id = ?',
+          [userId]
+        );
+        if (user[0]?.profilepic) {
+          await deleteProfilePic(user[0].profilepic);
+        }
+      }
+    } catch (error) {
+      // Clean up new image if something failed
+      if (newImageInfo) {
+        await deleteProfilePic(newImageInfo.encryptedFilename);
+      }
+      throw error;
+    }
+  }
+
+  // Remove the profilepicture field to avoid DB errors
+  delete updateData.profilepicture;
+
   try {
-    // Filter out undefined values
     const filteredData = Object.fromEntries(
       Object.entries(updateData).filter(([_, v]) => v !== undefined)
     );
 
-    if (Object.keys(filteredData).length === 0) {
-      return; // Nothing to update
-    }
+    if (Object.keys(filteredData).length === 0) return;
 
     await db.query(
       'UPDATE medusers SET ? WHERE user_id = ?',
       [filteredData, userId]
     );
   } catch (error) {
+    // Clean up new image if DB update fails
+    if (newImageInfo) {
+      await deleteProfilePic(newImageInfo.encryptedFilename);
+    }
     console.error('Profile update error:', error);
     throw error;
   }
