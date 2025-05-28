@@ -9,10 +9,23 @@ const authenticate = require('../middlewares/authMiddleware');
 const advertisementController = require('../controllers/advertisementController');
 const profileController = require('../controllers/profileController');
 const notificationController = require('../controllers/notificationController');
+const appController = require('../controllers/appController');
 
 // User registration route
 // router.post('/signup', userController.signup);
 router.post('/auth/login', authController.login);
+router.post('/auth/logout', authenticate, authController.logout);
+// Account Deletion Flow
+router.post('/user/sentaccountcloseotp', authenticate, userController.sendAccountCloseOTP);
+router.post('/user/deleteuseraccount', authenticate, userController.deleteUserAccount);
+
+// router.post('/user/reactivate', authenticate, userController.reactivateAccount);
+
+// app info
+router.get('/app/checkappinfo', appController.checkAppInfo);
+router.post('/app/termsandconditions', authenticate, appController.getTermsAndConditions);
+router.post('/app/aboutus', authenticate, appController.getAboutUs);
+
 
 // Google registration route
 router.post('/auth/googleregister', authController.googleRegister);

@@ -1,6 +1,9 @@
 const User = require('../models/userModel');
 const { encrypt, decrypt } = require('../utils/encryption');
 const { generateVerificationToken, sendVerificationEmail } = require('../utils/emailService');
+const Account = require('../models/accountModel');
+const { sendAccountDeletionOTP } = require('../utils/emailService');
+const db = require('../config/db');
 
 exports.signup = async (req, res) => {
   try {
@@ -85,3 +88,61 @@ exports.signup = async (req, res) => {
     });
   }
 };
+
+// Send account deletion OTP
+exports.sendAccountCloseOTP = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    // Get user email from DB using ID
+    const [user] = await db.query(
+      'SELECT email FROM medusers WHERE user_id = ?',
+      [userId]
+    );
+    
+    if (!user[0]?.email) {
+      throw new Error('User email not found');
+    }
+
+    const otp = await Account.generateAccountDeletionOTP(userId);
+    await sendAccountDeletionOTP(decrypt(user[0].email), otp);
+
+    res.json({ 
+      error: false, 
+      message: 'OTP sent to your email' 
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      error: true, 
+      message: error.message || 'Failed to send OTP' 
+    });
+  }
+};
+
+// Delete user account
+exports.deleteUserAccount = async (req, res) => {
+  try {
+    const { otp } = req.body;
+    await Account.verifyAndDeleteAccount(req.user.id, otp);
+    
+    res.json({ 
+      error: false, 
+      message: 'Account deactivated successfully' 
+    });
+  } catch (error) {
+    res.status(200).json({ 
+      error: true, 
+      message: error.message || 'Account deletion failed' 
+    });
+  }
+};
+
+// Reactivate account
+// exports.reactivateAccount = async (req, res) => {
+//   try {
+//     await User.reactivateAccount(req.user.id);
+//     res.json({ error: false, message: 'Account reactivated' });
+//   } catch (error) {
+//     res.status(500).json({ error: true, message: error.message });
+//   }
+// };

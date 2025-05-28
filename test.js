@@ -16,3 +16,9 @@ transporter.sendMail({
   subject: 'SMTP Test',
   text: 'If you see this, your config works!'
 }).then(console.log).catch(console.error);
+
+const { sendAccountDeletionOTP } = require('./utils/emailService');
+
+sendAccountDeletionOTP('judejfsjd01t@gmail.com', '123456')
+  .then(() => console.log('Email sent'))
+  .catch(console.error);

@@ -30,7 +30,7 @@ async function sendVerificationEmail(email, token) {
   // const verificationUrl = `/api/auth/verify-email?token=${encodeURIComponent(cleanToken)}`;
 
   const mailOptions = {
-    from: `"Your App" <${process.env.SMTP_FROM_EMAIL}>`,
+    from: `"Med" <${process.env.SMTP_FROM_EMAIL}>`,
     to: email,
     cc: 'syagin@qawebprints.com', // CC email
 
@@ -54,7 +54,7 @@ async function sendVerificationEmail(email, token) {
 // Password reset
 async function sendPasswordResetEmail(email, resetUrl) {
   const mailOptions = {
-    from: `"Your App" <${process.env.SMTP_FROM_EMAIL}>`,
+    from: `"Med" <${process.env.SMTP_FROM_EMAIL}>`,
     to: email,
     cc: 'syagin@qawebprints.com', // CC email
 
@@ -76,4 +76,34 @@ async function sendPasswordResetEmail(email, resetUrl) {
   }
 }
 
-module.exports = { generateVerificationToken, sendVerificationEmail,sendPasswordResetEmail };
+// --- NEW: Account Deletion OTP Email ---
+async function sendAccountDeletionOTP(email, otp) {
+  console.log('Sending OTP ', email, otp);
+  const mailOptions = {
+    from: `"Med" <${process.env.SMTP_FROM_EMAIL}>`,
+    to: email,
+    cc: 'syagin@qawebprints.com', // Keep CC if needed
+    subject: 'Confirm Account Deletion',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #d9534f;">MedE Account Deletion Request</h2>
+        <p>You requested to delete your account. Use this OTP to confirm:</p>
+        <div style="background: #f8f9fa; padding: 10px; margin: 15px 0; text-align: center;">
+          <strong style="font-size: 24px; letter-spacing: 2px;">${otp}</strong>
+        </div>
+        <p style="color: #6c757d;"><em>This OTP expires in 5 minutes.</em></p>
+        <p>If you didn't request this, please secure your account immediately.</p>
+      </div>
+    `,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    return true;
+  } catch (error) {
+    console.error('Account deletion OTP email error:', error);
+    return false;
+  }
+}
+
+module.exports = { generateVerificationToken, sendVerificationEmail,sendPasswordResetEmail,sendAccountDeletionOTP  };

@@ -40,6 +40,40 @@ maritalstatus: userData.maritalstatus ? encrypt(userData.maritalstatus) : ''
     return result.insertId;
   }
 
+//logout
+static async removeDeviceToken(userId, deviceTokenToRemove) {
+  try {
+    // Get current device tokens
+    const [user] = await db.query(
+      'SELECT devicetoken FROM medusers WHERE user_id = ?',
+      [userId]
+    );
+    
+    if (!user[0] || !user[0].devicetoken) return false;
+    
+    // Decrypt and split tokens
+    const currentTokens = user[0].devicetoken.split(',')
+      .map(token => decrypt(token))
+      .filter(token => token !== deviceTokenToRemove);
+    
+    // Encrypt remaining tokens
+    const updatedTokens = currentTokens
+      .map(token => encrypt(token))
+      .join(',');
+    
+    // Update database
+    await db.query(
+      'UPDATE medusers SET devicetoken = ? WHERE user_id = ?',
+      [updatedTokens || '', userId]
+    );
+    
+    return true;
+  } catch (error) {
+    console.error('Error removing device token:', error);
+    throw error;
+  }
+}
+
   // Check for existing email or phone number
   static async checkExistingUsers(email, phonenumber) {
     try {
@@ -424,13 +458,25 @@ static async getProfile(userId) {
     // dob: user.dob ? decrypt(user.dob) : '0000-00-00',
           // dob: formattedDob, // Use the properly formatted DOB
   // dob: decryptedUser.dob, // SIMPLIFIED
-      dob: user.dob ? decrypt(user.dob) : '0000-00-00', // SIMPLIFIED - like other fields
+      // dob: user.dob ? decrypt(user.dob) : '0000-00-00', // SIMPLIFIED - like other fields
+// dob: user.dob ? (decrypt(user.dob) || '0000-00-00') : '0000-00-00',
+// Replace the dob line with:
+dob: user.dob && user.dob !== encrypt('0000-00-00') ? decrypt(user.dob) : '0000-00-00',
 
       maritalstatus: decrypt(user.maritalstatus) || '',
 
-    profilepicture: user.profilepic 
-      ? `/profile-pics/${decrypt(user.profilepic)}.jpg`
-      : DEFAULT_PROFILE_PIC,     
+    // profilepicture: user.profilepic 
+    //   ? `/profile-pics/${decrypt(user.profilepic)}.jpg`
+    //   : DEFAULT_PROFILE_PIC,   
+    profilepicture: user.profilepic ? (() => {
+  const decryptedPic = decrypt(user.profilepic);
+  // Check if it's a Google URL (starts with http)
+  if (decryptedPic.startsWith('http')) {
+    return decryptedPic;
+  }
+  // Otherwise it's a local file
+  return `/profile-pics/${decryptedPic}.jpg`;
+})() : DEFAULT_PROFILE_PIC,  
       
       emailverified: user.emailverified,
       patientlocation: decryptedlocation || '',

@@ -47,6 +47,23 @@ return res.status(200).json({
 });
     }
 
+        // Block login if account is soft-deleted
+    if (user.onlinestatus === 0) {
+      return res.status(200).json({
+        error: true,
+        message: 'Account deactivated. Contact support to recover.',
+  username: '',
+  phonenumber: '',
+  profilepicture: '',
+  dob: '',
+  emailverified: 0,
+  patientlocation: '',
+  emailalerts: 0,
+  pushalerts: 0,
+  token: ''
+      });
+    }
+
     // Decrypt ALL stored user data for validation
     const decryptedUser = {
       email: decrypt(user.email),
@@ -54,10 +71,18 @@ return res.status(200).json({
       username: decrypt(user.userfullname),
       phonenumber: decrypt(user.mobileno),
   // profilepicture: user.profilepic ? decrypt(user.profilepic) : DEFAULT_PROFILE_PIC, // Fixed here
-      profilepicture: user.profilepic 
-      ? `/profile-pics/${decrypt(user.profilepic)}.jpg`
-      : DEFAULT_PROFILE_PIC,
-
+      // profilepicture: user.profilepic 
+      // ? `/profile-pics/${decrypt(user.profilepic)}.jpg`
+      // : DEFAULT_PROFILE_PIC,
+profilepicture: user.profilepic ? (() => {
+  const decryptedPic = decrypt(user.profilepic);
+  // Check if it's a Google URL (starts with http)
+  if (decryptedPic.startsWith('http')) {
+    return decryptedPic;
+  }
+  // Otherwise it's a local file
+  return `/profile-pics/${decryptedPic}.jpg`;
+})() : DEFAULT_PROFILE_PIC,
       // dob: decrypt(user.dob),
       // dob: user.dob ? decrypt(user.dob).split('T')[0] : '0000-00-00',
   // dob: user.dob ? 
@@ -153,7 +178,9 @@ if (devicetoken) {
     //   dob: (decryptedUser.dob && decryptedUser.dob !== '0000-00-00') 
     //  ? decryptedUser.dob 
     //  : '0000-00-00',
-    dob: decryptedUser.dob,
+    // dob: decryptedUser.dob || '0000-00-00',
+    dob: (user.dob && decrypt(user.dob) !== '0000-00-00') ? decrypt(user.dob) : '0000-00-00',
+
 
       emailverified: user.emailverified,
       emailalerts: user.emailalerts,
@@ -275,6 +302,23 @@ exports.googleLogin = async (req, res) => {
       user = await User.findByEncryptedEmailWithGoogle(encryptedEmail);
       
       if (user) {
+
+        // Check deactivation status only AFTER user is found
+        if (user.onlinestatus === 0) {
+          return res.status(200).json({
+            error: true,
+            message: 'Account deactivated. Contact support.',
+            username: "",
+            profilepicture: "",
+            phonenumber: "",
+            dob: "",
+            patientlocation: "",        
+            emailalerts: 0,
+            pushalerts: 0,
+            token: ""
+          });
+        }
+
         return res.status(200).json({
           error: true,
           message: "Email already registered with another Google account",
@@ -327,9 +371,23 @@ exports.googleLogin = async (req, res) => {
     const decryptedUser = {
       username: decrypt(user.userfullname),
       phonenumber: user.mobileno ? decrypt(user.mobileno) : "",
-profilepicture: user.profilepic ? decrypt(user.profilepic) : DEFAULT_PROFILE_PIC,
+// profilepicture: user.profilepic ? decrypt(user.profilepic) : DEFAULT_PROFILE_PIC,
+profilepicture: user.profilepic ? (() => {
+  const decryptedPic = decrypt(user.profilepic);
+  // Check if it's a Google URL (starts with http)
+  if (decryptedPic.startsWith('http')) {
+    return decryptedPic;
+  }
+  // Otherwise it's a local file
+  return `/profile-pics/${decryptedPic}.jpg`;
+})() : DEFAULT_PROFILE_PIC,
+
       // dob: user.dob ? decrypt(user.dob) : "",
-        dob: user.dob ? decrypt(user.dob) : '0000-00-00',
+        // dob: user.dob ? decrypt(user.dob) : '0000-00-00',
+        
+        // For Google login:
+dob: (user.dob && decrypt(user.dob) !== '0000-00-00') ? decrypt(user.dob) : '0000-00-00',
+
       // patientlocation: user.patientlocation ? decrypt(user.patientlocation) : "",
       emailalerts: user.emailalerts,
       pushalerts: user.pushalerts
@@ -373,6 +431,34 @@ profilepicture: user.profilepic ? decrypt(user.profilepic) : DEFAULT_PROFILE_PIC
       patientlocation: "",
       emailalerts: 0,
       pushalerts: 0
+    });
+  }
+};
+
+exports.logout = async (req, res) => {
+  try {
+    const { devicetoken } = req.body;
+    const userId = req.user.id; // From auth middleware
+
+    if (!devicetoken) {
+      return res.status(200).json({
+        error: true,
+        message: 'Device token is required'
+      });
+    }
+
+    await User.removeDeviceToken(userId, devicetoken);
+
+    res.json({
+      error: false,
+      message: 'Logged out successfully'
+    });
+
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.status(500).json({
+      error: true,
+      message: error.message || 'Logout failed'
     });
   }
 };

@@ -53,5 +53,25 @@ async function deleteProfilePic(filename) {
 module.exports = {
   saveBase64Image,
   deleteProfilePic,
+  // getProfilePictureUrl,
   DEFAULT_PROFILE_PIC
 };
+
+
+// Alternative cleaner approach - Add this helper function to utils/imageHandler.js:
+// function getProfilePictureUrl(encryptedProfilePic) {
+//   if (!encryptedProfilePic) return DEFAULT_PROFILE_PIC;
+  
+//   const decryptedPic = decrypt(encryptedProfilePic);
+  
+//   // Check if it's a Google URL (starts with http)
+//   if (decryptedPic.startsWith('http')) {
+//     return decryptedPic;
+//   }
+  
+//   // Otherwise it's a local file
+//   return `/profile-pics/${decryptedPic}.jpg`;
+// }
+
+// // Then in all three locations, simply use:
+// profilepicture: getProfilePictureUrl(user.profilepic),
