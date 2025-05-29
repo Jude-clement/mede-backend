@@ -2,7 +2,6 @@ const User = require('../models/userModel');
 const { encrypt, decrypt } = require('../utils/encryption');
 const { generateToken } = require('../utils/jwt');
 
-// const DEFAULT_PROFILE_PIC = '/user-icon.jpg'; // Default profile picture path
 const { DEFAULT_PROFILE_PIC } = require('../utils/imageHandler');
 
 exports.login = async (req, res) => {
@@ -70,10 +69,7 @@ return res.status(200).json({
       password: decrypt(user.password),
       username: decrypt(user.userfullname),
       phonenumber: decrypt(user.mobileno),
-  // profilepicture: user.profilepic ? decrypt(user.profilepic) : DEFAULT_PROFILE_PIC, // Fixed here
-      // profilepicture: user.profilepic 
-      // ? `/profile-pics/${decrypt(user.profilepic)}.jpg`
-      // : DEFAULT_PROFILE_PIC,
+
 profilepicture: user.profilepic ? (() => {
   const decryptedPic = decrypt(user.profilepic);
   // Check if it's a Google URL (starts with http)
@@ -83,15 +79,8 @@ profilepicture: user.profilepic ? (() => {
   // Otherwise it's a local file
   return `/profile-pics/${decryptedPic}.jpg`;
 })() : DEFAULT_PROFILE_PIC,
-      // dob: decrypt(user.dob),
-      // dob: user.dob ? decrypt(user.dob).split('T')[0] : '0000-00-00',
-  // dob: user.dob ? 
-  //      (typeof decrypt(user.dob) === 'string' ? 
-  //       decrypt(user.dob).split('T')[0] : 
-  //       '0000-00-00') : 
-  //      '0000-00-00',
-    dob: user.dob ? decrypt(user.dob) : '0000-00-00',
-      // patientlocation: decrypt(user.patientlocation)
+
+  dob: user.dob ? decrypt(user.dob) : '0000-00-00'
 
     };
         // Handle location decryption if exists
@@ -102,14 +91,6 @@ profilepicture: user.profilepic ? (() => {
       decryptedlocation = decryptedParts.join(',');
     }
     
-    // Handle DOB - NEW ROBUST VERSION
-    // let formattedDob = '0000-00-00';
-    // if (user.dob && user.dob !== encrypt('0000-00-00')) {
-    //   const decrypted = decrypt(user.dob);
-    //   formattedDob = decrypted.includes('T') 
-    //     ? decrypted.split('T')[0] 
-    //     : decrypted;
-    // }
     // Validate credentials against decrypted data
     if (email !== decryptedUser.email || password !== decryptedUser.password) {
 return res.status(200).json({
@@ -174,12 +155,8 @@ if (devicetoken) {
       username: decryptedUser.username,
       phonenumber: decryptedUser.phonenumber,
       profilepicture: decryptedUser.profilepicture,
-      // dob: decryptedUser.dob || '',
-    //   dob: (decryptedUser.dob && decryptedUser.dob !== '0000-00-00') 
-    //  ? decryptedUser.dob 
-    //  : '0000-00-00',
-    // dob: decryptedUser.dob || '0000-00-00',
-    dob: (user.dob && decrypt(user.dob) !== '0000-00-00') ? decrypt(user.dob) : '0000-00-00',
+
+  dob: decryptedUser.dob || '0000-00-00', // Consistent default
 
 
       emailverified: user.emailverified,
@@ -371,8 +348,8 @@ exports.googleLogin = async (req, res) => {
     const decryptedUser = {
       username: decrypt(user.userfullname),
       phonenumber: user.mobileno ? decrypt(user.mobileno) : "",
-// profilepicture: user.profilepic ? decrypt(user.profilepic) : DEFAULT_PROFILE_PIC,
-profilepicture: user.profilepic ? (() => {
+      
+      profilepicture: user.profilepic ? (() => {
   const decryptedPic = decrypt(user.profilepic);
   // Check if it's a Google URL (starts with http)
   if (decryptedPic.startsWith('http')) {
@@ -381,12 +358,9 @@ profilepicture: user.profilepic ? (() => {
   // Otherwise it's a local file
   return `/profile-pics/${decryptedPic}.jpg`;
 })() : DEFAULT_PROFILE_PIC,
-
-      // dob: user.dob ? decrypt(user.dob) : "",
-        // dob: user.dob ? decrypt(user.dob) : '0000-00-00',
         
         // For Google login:
-dob: (user.dob && decrypt(user.dob) !== '0000-00-00') ? decrypt(user.dob) : '0000-00-00',
+  dob: user.dob ? decrypt(user.dob) : '0000-00-00',
 
       // patientlocation: user.patientlocation ? decrypt(user.patientlocation) : "",
       emailalerts: user.emailalerts,
@@ -406,14 +380,10 @@ dob: (user.dob && decrypt(user.dob) !== '0000-00-00') ? decrypt(user.dob) : '000
         username: decryptedUser.username,
   phonenumber: decryptedUser.phonenumber,
   profilepicture: decryptedUser.profilepicture, // This should now work correctly
-  // dob: decryptedUser.dob,
-    dob: decryptedUser.dob ? 
-       (typeof decrypt(user.dob) === 'string' ? 
-        decrypt(user.dob).split('T')[0] : 
-        '0000-00-00') : 
-       '0000-00-00',
-  // patientlocation: decryptedUser.patientlocation,
-                  patientlocation: decryptedlocation || '',
+
+      dob: decryptedUser.dob || '0000-00-00', // Consistent default
+
+      patientlocation: decryptedlocation || '',
 
   emailalerts: decryptedUser.emailalerts,
   pushalerts: decryptedUser.pushalerts,

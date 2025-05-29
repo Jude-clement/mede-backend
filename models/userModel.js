@@ -28,7 +28,7 @@ googleid: userData.googleid ? encrypt(userData.googleid) : '',
 devicetoken: userData.devicetoken ? encrypt(userData.devicetoken) : '',
 patientlocation: userData.patientlocation ? encrypt(userData.patientlocation) : '',
 accountotp: userData.accountotp ? encrypt(userData.accountotp) : '',
-  dob: userData.dob ? encrypt(userData.dob) : encrypt('0000-00-00'), // Encrypt default value too
+  dob: userData.dob ? encrypt(userData.dob) : encrypt('0000-00-00'), // Always encrypt
 gender: userData.gender ? encrypt(userData.gender) : '',
 maritalstatus: userData.maritalstatus ? encrypt(userData.maritalstatus) : ''
     };
@@ -82,7 +82,7 @@ static async removeDeviceToken(userId, deviceTokenToRemove) {
       const encryptedPhone = encrypt(phonenumber);
 
       const [emailRows] = await db.query(
-        'SELECT user_id FROM medusers WHERE email = ?',
+        'SELECT user_id FROM medusers WHERE email = ? AND onlinestatus = 1',
         [encryptedEmail]
       );
 
@@ -91,7 +91,7 @@ static async removeDeviceToken(userId, deviceTokenToRemove) {
       }
 
       const [phoneRows] = await db.query(
-        'SELECT user_id FROM medusers WHERE mobileno = ?',
+        'SELECT user_id FROM medusers WHERE mobileno = ? AND onlinestatus = 1',
         [encryptedPhone]
       );
 
@@ -110,7 +110,7 @@ static async removeDeviceToken(userId, deviceTokenToRemove) {
   static async findByEmail(email) {
     const encryptedEmail = encrypt(email);
     const [rows] = await db.query(
-      'SELECT * FROM medusers WHERE email = ?',
+      'SELECT * FROM medusers WHERE email = ? AND onlinestatus = 1',
       [encryptedEmail]
     );
     return rows[0];
@@ -119,7 +119,7 @@ static async removeDeviceToken(userId, deviceTokenToRemove) {
   static async findByPhone(phonenumber) {
     const encryptedPhone = encrypt(phonenumber);
     const [rows] = await db.query(
-      'SELECT * FROM medusers WHERE mobileno = ?',
+      'SELECT * FROM medusers WHERE mobileno = ? AND onlinestatus = 1',
       [encryptedPhone]
     );
     return rows[0];
@@ -152,47 +152,6 @@ static async removeDeviceToken(userId, deviceTokenToRemove) {
     }
   }
 
-//first createwith google
-
-// static async createWithGoogle(userData) {
-//   // First check for existing users
-//   const existingUser = await this.checkExistingUsers(userData.email, userData.phonenumber);
-//   if (existingUser.exists) {
-//     throw new Error(existingUser.message);
-//   }
-
-//   // Encrypt all sensitive data
-//   const encryptedData = {
-//     mobileno: encrypt(userData.phonenumber || ''), // Phone optional for Google signup
-//     email: encrypt(userData.email),
-//     // password: encrypt(userData.password || crypto.randomBytes(16).toString('hex')), // Generate random password if not provided
-//     userfullname: encrypt(userData.name),
-//     googleid: userData.googleid,
-//     profilepic: userData.photourl || '',
-//     // Google-specific defaults
-//     emailverified: 1, // Mark as verified
-//     userstatus: 1,
-//     emailalerts: 1,
-//     pushalerts: 1,
-//     onlinestatus: 1,
-//     password: '', // No password for Google users
-//     profilepic: userData.profilepicture || '', // Can add profile picture URL from Google
-//     devicetoken: userData.devicetoken || '', // Add device token here
-//     patientlocation: '',
-//     accountotp: '',
-//     dob: userData.dob || '1970-01-01',
-//     gender: userData.gender || '',
-//     maritalstatus: userData.maritalstatus || ''
-//   };
-
-//   const [result] = await db.query(
-//     `INSERT INTO medusers SET ?`, 
-//     encryptedData
-//   );
-//   return result.insertId;
-// }
-
-
 ///google signup
 
 static async createWithGoogle(userData) {
@@ -221,14 +180,10 @@ static async createWithGoogle(userData) {
 devicetoken: userData.devicetoken ? encrypt(userData.devicetoken) : '',
 patientlocation: userData.patientlocation ? encrypt(userData.patientlocation) : '',
 accountotp: userData.accountotp ? encrypt(userData.accountotp) : '',
-  dob: userData.dob ? encrypt(userData.dob) : encrypt('0000-00-00'),
+  dob: userData.dob ? encrypt(userData.dob) : encrypt('0000-00-00'), // Always encrypt
 gender: userData.gender ? encrypt(userData.gender) : '',
 maritalstatus: userData.maritalstatus ? encrypt(userData.maritalstatus) : ''
-      // patientlocation: '',
-      // accountotp: '',
-      // dob: '',
-      // gender: '',
-      // maritalstatus: ''
+
   };
 
   const [result] = await db.query(
@@ -435,39 +390,28 @@ static async getProfile(userId) {
       decryptedlocation = decryptedParts.join(',');
     }
 
-    // Handle DOB - NEW ROBUST VERSION
-    // let formattedDob = '0000-00-00';
-    // if (user.dob && user.dob !== encrypt('0000-00-00')) {
-    //   const decrypted = decrypt(user.dob);
-    //   formattedDob = decrypted.includes('T') 
-    //     ? decrypted.split('T')[0] 
-    //     : decrypted;
-    // }
+        // FIXED DOB HANDLING - SIMPLE AND CONSISTENT
+    let dobValue = '0000-00-00'; // Default value
+    if (user.dob) {
+      try {
+        const decryptedDob = decrypt(user.dob);
+        dobValue = decryptedDob || '0000-00-00';
+      } catch (error) {
+        console.error('DOB decryption error:', error);
+        dobValue = '0000-00-00';
+      }
+    }
     return {
       username: user.userfullname ? decrypt(user.userfullname) : '',
       phonenumber: user.mobileno ? decrypt(user.mobileno) : '',
       email: user.email ? decrypt(user.email) : '',
       gender: decrypt(user.gender) || '',
-      // gender: user.gender ? decrypt(user.gender) : '',
 
-      // dob: decrypt(user.dob) || '',
-// dob: user.dob ? decrypt(user.dob) || '0000-00-00' : '0000-00-00',
-// dob: user.dob && user.dob !== encrypt('0000-00-00') 
-//      ? decrypt(user.dob) 
-//      : '0000-00-00',
-    // dob: user.dob ? decrypt(user.dob) : '0000-00-00',
-          // dob: formattedDob, // Use the properly formatted DOB
-  // dob: decryptedUser.dob, // SIMPLIFIED
-      // dob: user.dob ? decrypt(user.dob) : '0000-00-00', // SIMPLIFIED - like other fields
-// dob: user.dob ? (decrypt(user.dob) || '0000-00-00') : '0000-00-00',
 // Replace the dob line with:
-dob: user.dob && user.dob !== encrypt('0000-00-00') ? decrypt(user.dob) : '0000-00-00',
+      dob: dobValue, // FIXED - Always returns valid date
 
       maritalstatus: decrypt(user.maritalstatus) || '',
-
-    // profilepicture: user.profilepic 
-    //   ? `/profile-pics/${decrypt(user.profilepic)}.jpg`
-    //   : DEFAULT_PROFILE_PIC,   
+  
     profilepicture: user.profilepic ? (() => {
   const decryptedPic = decrypt(user.profilepic);
   // Check if it's a Google URL (starts with http)
@@ -586,23 +530,3 @@ static async changePassword(userId, oldPassword, newPassword) {
 
 
 module.exports = User;
-
-
-
-// for cleaner duplicate checking:
-// static async findOrCreateByGoogle(googleUserData) {
-//   try {
-//     // Try to find existing user
-//     let user = await this.findByGoogleId(googleUserData.googleid);
-    
-//     if (!user) {
-//       // Create if not exists
-//       const userId = await this.createWithGoogle(googleUserData);
-//       user = await this.findByGoogleId(googleUserData.googleid);
-//     }
-    
-//     return user;
-//   } catch (error) {
-//     throw error;
-//   }
-// }

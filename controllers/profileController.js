@@ -99,18 +99,13 @@ exports.editProfile = async (req, res) => {
       userfullname: username ? encrypt(username) : undefined,
       mobileno: phonenumber ? encrypt(phonenumber) : undefined,
       gender: gender ? encrypt(gender) : undefined,
-      // dob: dob ? encrypt(dob) : undefined,
-        // dob: dob !== undefined ? encrypt(dob) : encrypt('0000-00-00'),
-    dob: dob ? encrypt(dob) : encrypt('0000-00-00'),
+
+      dob: dob ? encrypt(dob) : undefined, // Only update if provided
 
       maritalstatus: maritalstatus ? encrypt(maritalstatus) : undefined,
-      // profilepic: profilepicture ? encrypt(profilepicture) : 
-      //            (currentProfile.profilepicture ? undefined : encrypt(DEFAULT_PROFILE_PIC))
-        profilepicture: profilepicture // Send as-is, let userModel handle it
 
-    //   profilepic: profilepicture && profilepicture.includes('base64') 
-    // ? encrypt(profilepicture) 
-    // : (currentProfile.profilepicture ? undefined : encrypt(DEFAULT_PROFILE_PIC))
+      profilepicture: profilepicture // Send as-is, let userModel handle it
+
     };
 
     // Check if email is being changed
